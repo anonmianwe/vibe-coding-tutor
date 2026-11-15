@@ -1,0 +1,8 @@
+.DS_Store
+.vscode/
+node_modules/
+.env
+*.key
+
+# organizers' document: kept locally, not published
+docs/competition-rules.pdf

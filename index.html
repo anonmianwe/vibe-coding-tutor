@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="th" data-theme="normal" data-size="M" data-motion="on" data-font="sarabun">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>เรียนโค้ดกับน้องบิต</title>
+  <meta name="description" content="เกมเรียนเขียนโปรแกรมด้วย Python หรือ C: เขียนโค้ดสั่งหุ่นยนต์น้องบิตให้ไปถึงธง เรียนอัลกอริทึม ตัวแปร ลูป เงื่อนไข การค้นหา และการดีบัก อ่านออกเสียง ปรับขนาดตัวอักษรและสีได้">
+  <meta name="theme-color" content="#5b3fd6">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect x='14' y='22' width='92' height='76' rx='24' fill='%235b3fd6'/%3E%3Crect x='28' y='40' width='64' height='36' rx='14' fill='white'/%3E%3Ccircle cx='46' cy='57' r='7' fill='%231d1b2e'/%3E%3Ccircle cx='74' cy='57' r='7' fill='%231d1b2e'/%3E%3Ccircle cx='60' cy='12' r='8' fill='%23ffb703'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@500&family=Noto+Sans+Thai+Looped:wght@400;600&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <a class="skip" href="#app">ข้ามไปที่เนื้อหา</a>
+
+  <header class="topbar">
+    <a class="brand" href="#/" aria-label="เรียนโค้ดกับน้องบิต หน้าแรก">
+      <span class="brand-mascot" id="brandMascot"></span>
+      <span class="brand-name">เรียนโค้ดกับน้องบิต</span>
+    </a>
+    <div class="tools">
+      <span class="star-count level-chip" title="เลเวล"><span aria-hidden="true">🏅</span> Lv.<b id="levelNum">1</b><span class="sr">เลเวล</span></span>
+      <span class="star-count" title="ดาวทั้งหมด"><span aria-hidden="true">⭐</span> <b id="starTotal">0</b><span class="sr">ดาว</span></span>
+      <button type="button" id="btnSize" class="tool" aria-label="เปลี่ยนขนาดตัวอักษร">Aa</button>
+      <button type="button" id="btnTheme" class="tool" aria-label="เปลี่ยนสีหน้าจอ"><svg viewBox="0 0 24 24" width="1.1em" height="1.1em" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg></button>
+      <button type="button" id="btnSettings" class="tool" aria-label="ตั้งค่า">⚙</button>
+    </div>
+  </header>
+
+  <main id="app" tabindex="-1"></main>
+
+  <footer class="foot">
+    ผลงานสำหรับ KMUTNB ComEdu Open House 2027 · เนื้อหาอ้างอิงวิชา 020413101 Computer Programming (ปรับให้ง่ายสำหรับนักเรียน ม.ปลาย) · ข้อมูลทั้งหมดเป็นข้อมูลสมมติ
+  </footer>
+
+  <!-- Word pop-up -->
+  <dialog id="wordDlg" class="dlg" aria-labelledby="wordTitle">
+    <div class="dlg-body">
+      <div class="dlg-head">
+        <h2 id="wordTitle"></h2>
+        <button type="button" class="tool" id="wordSpeak" aria-label="อ่านคำนี้ให้ฟัง">🔊</button>
+      </div>
+      <p class="word-en" lang="en" id="wordEn"></p>
+      <h3>ความหมาย</h3>
+      <p id="wordMeaning"></p>
+      <h3>ตัวอย่าง</h3>
+      <p id="wordExample"></p>
+      <button type="button" class="btn primary wide" data-close>เข้าใจแล้ว 👍</button>
+    </div>
+  </dialog>
+
+  <!-- Settings -->
+  <dialog id="settingsDlg" class="dlg" aria-labelledby="settingsTitle">
+    <div class="dlg-body">
+      <div class="dlg-head">
+        <h2 id="settingsTitle">⚙ ตั้งค่า</h2>
+        <button type="button" class="tool" data-close aria-label="ปิด">✕</button>
+      </div>
+
+      <fieldset class="seg-group">
+        <legend>ภาษาเขียนโปรแกรม</legend>
+        <div class="seg" id="segLang"></div>
+      </fieldset>
+
+      <fieldset class="seg-group">
+        <legend>ขนาดตัวอักษร</legend>
+        <div class="seg" id="segSize"></div>
+      </fieldset>
+
+      <fieldset class="seg-group">
+        <legend>สีหน้าจอ</legend>
+        <div class="seg" id="segTheme"></div>
+      </fieldset>
+
+      <fieldset class="seg-group">
+        <legend>ความเร็วเสียงอ่าน: <b id="rateLabel"></b></legend>
+        <div class="rate-row">
+          <span aria-hidden="true">🐢</span>
+          <input type="range" id="rate" min="0.5" max="1.5" step="0.1" aria-label="ความเร็วเสียงอ่าน">
+          <span aria-hidden="true">🐇</span>
+          <button type="button" class="btn small" id="rateTest">🔊 ลองฟัง</button>
+        </div>
+        <p class="note" id="voiceNote"></p>
+      </fieldset>
+
+      <div class="switches">
+        <label class="switch"><input type="checkbox" id="optSimple"><span>ภาษาง่าย (ประโยคสั้น คำง่าย)</span></label>
+        <label class="switch"><input type="checkbox" id="optEn"><span>แสดงคำแปลภาษาอังกฤษ <span lang="en">(English help)</span></span></label>
+        <label class="switch"><input type="checkbox" id="optFont"><span>ฟอนต์อ่านง่าย (ตัวอักษรมีหัว)</span></label>
+        <label class="switch"><input type="checkbox" id="optMotion"><span>เปิดภาพเคลื่อนไหว</span></label>
+      </div>
+
+      <button type="button" class="btn danger wide" id="btnReset">ล้างความคืบหน้าทั้งหมด</button>
+      <button type="button" class="btn primary wide" data-close>เสร็จแล้ว</button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- content: shared words and badges, then one file per chapter (in order) -->
+  <script src="js/content/words.js"></script>
+  <script src="js/content/chapter-1.js"></script>
+  <script src="js/content/chapter-2.js"></script>
+  <script src="js/content/chapter-3.js"></script>
+  <script src="js/content/chapter-4.js"></script>
+  <script src="js/content/chapter-5.js"></script>
+  <script src="js/content/chapter-6.js"></script>
+  <!-- the puzzle engine, then the app -->
+  <script src="js/puzzle.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

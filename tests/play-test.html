@@ -1,0 +1,155 @@
+<!doctype html>
+<!-- Automated test. Run a local server from the repo root (python3 -m http.server 8000),
+     open http://localhost:8000/tests/play-test.html and read the RESULT line.
+     Headless: google-chrome --headless=new --virtual-time-budget=150000 --dump-dom <url>
+     It clears this site's saved progress and settings. -->
+<meta charset="utf-8"><title>play test</title>
+<body><pre id="out">running…</pre>
+<iframe id="f" style="width:400px;height:900px;border:1px solid #999"></iframe>
+<script>
+const log = [];
+const ok = (c, m) => log.push((c ? 'PASS ' : 'FAIL ') + m);
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+async function until(fn, ms = 6000) { const t = Date.now(); while (Date.now() - t < ms) { const v = fn(); if (v) return v; await wait(20); } return null; }
+
+(async () => {
+  localStorage.removeItem('vct3-progress');
+  localStorage.removeItem('vct-settings');
+  const f = document.getElementById('f');
+  f.src = '../index.html#/';
+  await wait(900);
+  const w = f.contentWindow, d = f.contentDocument;
+  const $ = (s) => d.querySelector(s), $$ = (s) => [...d.querySelectorAll(s)];
+  const errs = [];
+  w.addEventListener('error', (e) => errs.push(e.message));
+  w.PUZZLE_DELAY = 0;
+  const P = w.Puzzle;
+  const { CHAPTERS, WORDS } = w.CONTENT;
+  const LEVELS = [];
+  CHAPTERS.forEach((ch) => ch.levels.forEach((def, k) => LEVELS.push({ ch, def, k })));
+  const noHScroll = (where) => ok(d.documentElement.scrollWidth <= d.documentElement.clientWidth + 1, `no sideways scroll at 400px: ${where}`);
+  const visible = (el) => el && el.offsetParent !== null;
+
+  // ---- 1. content and engine checks (no screen) ----
+  ok(CHAPTERS.length === 6 && LEVELS.length === 18, `6 chapters, ${LEVELS.length} levels`);
+  for (const { ch, def, k } of LEVELS) {
+    const name = `${ch.id} ${k + 1}`;
+    const r = P.simulate(def, def.solution);
+    ok(r.ok && r.blocks === def.best, `${name}: solution works and best = ${def.best} ${r.ok ? '' : r.msg}`);
+    if (def.start) ok(!P.simulate(def, def.start).ok, `${name}: the buggy start program really fails`);
+    for (const lang of ['python', 'c']) {
+      // blocks → code → blocks must give the same program
+      const code = P.codeText(P.parseDsl(def.solution), lang);
+      const back = P.parseCode(code, lang);
+      ok(back.ok && P.runAll(def, back.program).ok && P.count(back.program) === def.best, `${name}: ${lang} code round-trip works`);
+    }
+    if (def.tip) {
+      for (const m of (def.tip.text + def.tip.simple + def.tip.notes.python + def.tip.notes.c).matchAll(/\{([฀-๿]+)\}/g)) ok(WORDS[m[1]], `${name}: word {${m[1]}} is in the word list`);
+      if (ch.id !== 'var') for (const lang of ['python', 'c']) ok(P.parseCode(def.tip.code[lang], lang).ok, `${name}: tip example is valid ${lang}`);
+    }
+  }
+  // the parsers: accepted variants and helpful errors
+  const pc = (t, l) => P.parseCode(t, l);
+  ok(P.count(pc('for (i = 1; i <= 3; i += 1) { move(); }', 'c').program) === 2 && pc('for (i = 1; i <= 3; i += 1) { move(); }', 'c').program[0].n === 3, 'C: for (i = 1; i <= 3; i += 1) loops 3 times');
+  ok(pc('for i in range(2):\n    move()\nturn_left()', 'python').program.length === 2, 'Python: indentation ends the loop body');
+  const e1 = pc('move()\nfor i in range(3)\n    move()', 'python');
+  ok(!e1.ok && e1.line === 2 && e1.msg.includes(':'), 'Python error: missing colon on line 2 → ' + e1.msg);
+  const e2 = pc('move();\nturn_right()\nmove();', 'c');
+  ok(!e2.ok && e2.line === 2 && e2.msg.includes(';'), 'C error: missing semicolon on line 2 → ' + e2.msg);
+  const e3 = pc('Move()', 'python');
+  ok(!e3.ok && e3.msg.includes('move'), 'error: Move() → ' + e3.msg);
+  const e4 = pc('#include <stdio.h>\nmove();', 'c');
+  ok(!e4.ok && e4.msg.includes('#include'), 'C error: #include → ' + e4.msg);
+  const e5 = pc('if (wall_ahead()) {\n  move();\n', 'c');
+  ok(!e5.ok && e5.msg.includes('}'), 'C error: missing } → ' + e5.msg);
+  const e6 = pc('move()\n    move()', 'python');
+  ok(!e6.ok && e6.line === 2, 'Python error: unexpected indent → ' + e6.msg);
+
+  // ---- 2. start screen: choose a language ----
+  ok($('.start') && $$('.lang-card').length === 2, 'first visit shows the language picker');
+  $('.lang-card[data-lang="c"]').click();
+  await wait(100);
+  ok($('.puzzle'), 'choosing C opens level 1');
+  ok($('#tipBox') && $('#tipBox').open && $('#tipBox .code').textContent.includes('move();'), 'level 1 tip is open and shows C code');
+  ok(w.CONTENT.CHAPTERS[2].levels[0].tip.notes.c.includes('{ }'), 'sanity: the loop tip note for C contains { }');
+
+  // ---- 3. play every level ----
+  for (let i = 0; i < LEVELS.length; i++) {
+    const { ch, def, k } = LEVELS[i];
+    const name = `${ch.id} ${k + 1}`;
+    if (i > 0) { w.location.hash = `#/level/${i}`; await wait(80); }
+    ok($('.puzzle'), `${name}: level opens (unlocked)`);
+    if (i === 0) {
+      ok($('#pzTypeTab').disabled, 'typing mode is locked at the start');
+      ok(!visible($('#pzSolve')), 'the solution button is hidden before any failed run');
+      for (let n = 0; n < 3; n++) $('[data-add="move"]').click();
+      ok($$('#pzProg .pz-code').map((c) => c.textContent).join('|') === 'move();|move();|move();', 'tapped blocks show as C code');
+      noHScroll('level 1');
+    } else if (i === 1) {
+      $('[data-add="move"]').click();
+      $('#pzGo').click();
+      ok(await until(() => $('#pzCoach').textContent.includes('คำใบ้')), 'a failed run gives a hint');
+      $('#pzGo').click();
+      await until(() => !$('#pzGo').disabled);
+      ok(visible($('#pzSolve')), 'after 2 fails the solution button appears');
+      $('#pzSolve').click();
+    } else if (i === 5) { // chapter 2, level 1: typing mode is now unlocked; type C code with a mistake first
+      ok(!$('#pzTypeTab').disabled, 'typing mode unlocks after chapter 1');
+      $('#pzTypeTab').click();
+      ok(visible($('#pzText')), 'typing box is shown');
+      $('#pzText').value = 'move();\npick_gem()\nmove();';
+      $('#pzGo').click();
+      ok(visible($('#pzError')) && $('#pzError').textContent.includes('บรรทัด 2'), 'typed error shows the line: ' + $('#pzError').textContent);
+      $('#pzText').value = 'move();\npick_gem();\nmove();\nmove();\npick_gem();\nmove();';
+    } else if (i === 7) { // loop tip in C must still show the braces
+      ok($('#tipBox .tip-note').textContent.includes('{ }'), 'C tip note keeps the literal { } braces');
+      $('#pzSolve').click();
+    } else if (i === 8) { // loops: typed C with a for loop
+      $('#pzTypeTab').click();
+      $('#pzText').value = 'for (int i = 0; i < 3; i++) {\n    move();\n    move();\n}'; // runs, but crashes into a rock
+      $('#pzGo').click();
+      ok(await until(() => !$('#pzGo').disabled && $('#pzCoach').textContent.includes('บรรทัด')), 'typed run that crashes names the line: ' + $('#pzCoach').textContent.slice(0, 60));
+      $('#pzText').value = 'for (int i = 0; i < 3; i++) {\n    move();\n    turn_right();\n    move();\n    turn_left();\n}';
+    } else if (i === 10) { // switch to Python in the middle of a level; the program follows
+      $('#pzSolve').click();
+      $$('#segLang button').find((b) => b.dataset.v === 'python').click();
+      await wait(50);
+      ok($$('#pzProg .pz-code')[0].textContent.startsWith('for i in range('), 'switching language redraws the program in Python');
+      ok($('#tipBox') === null || !$('#tipBox .code').textContent.includes(';'), 'tip follows the language');
+    } else if (i === 11) { // Python typed: if/else inside a loop
+      $('#pzTypeTab').click();
+      $('#pzText').value = 'for i in range(11):\n    if wall_ahead():\n        turn_right()\n    else:\n        move()';
+    } else if (i === 17) { // debug level in C-like nesting, check layout, then fix by solution
+      noHScroll('nested debug level (Python)');
+      $$('#segLang button').find((b) => b.dataset.v === 'c').click();
+      await wait(50);
+      noHScroll('nested debug level (C)');
+      $('#pzSolve').click();
+    } else {
+      $('#pzSolve').click(); // load the solution
+    }
+    $('#pzGo').click();
+    const won = await until(() => $('#pzResult .pz-win'), 8000);
+    ok(won, `${name}: solved on screen`);
+    if (!won) { log.push('   coach says: ' + ($('#pzCoach') || {}).textContent); break; }
+    $('#pzNext').click(); await wait(80);
+  }
+
+  // ---- 4. saving, rewards, settings ----
+  const p = JSON.parse(localStorage.getItem('vct3-progress'));
+  ok(Object.keys(p.stars).length === LEVELS.length, 'all levels saved');
+  ok(['first', 'persist', 'typist', 'bilingual', 'loop', 'all'].every((b) => p.badges.includes(b)), 'badges: ' + p.badges.join(', '));
+  ok(p.xp > 0 && Number($('#levelNum').textContent) >= 2, `XP ${p.xp}, level ${$('#levelNum').textContent}`);
+  w.location.hash = '#/'; await wait(80);
+  ok($('.home') && $$('.lvl.done').length === LEVELS.length, 'home map shows every level done');
+  noHScroll('home');
+  $('#btnTheme').click(); ok(d.documentElement.dataset.theme === 'contrast', 'theme button cycles');
+  $('#btnSize').click(); ok(d.documentElement.dataset.size === 'L', 'size button cycles');
+  const st = JSON.parse(localStorage.getItem('vct-settings'));
+  ok(st.theme === 'contrast' && st.lang === 'c', 'settings saved (theme and language)');
+  ok(errs.length === 0, 'no JavaScript errors ' + errs.join(' | '));
+
+  const fails = log.filter((l) => l.startsWith('FAIL')).length;
+  document.getElementById('out').textContent = `RESULT ${log.length - fails} passed, ${fails} failed\n` + log.join('\n');
+})().catch((e) => { document.getElementById('out').textContent = 'RESULT CRASH ' + e.stack + '\n' + log.join('\n'); });
+</script>

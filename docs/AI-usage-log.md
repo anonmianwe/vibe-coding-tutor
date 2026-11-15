@@ -1,0 +1,41 @@
+# AI Usage Log (แบบบันทึกการใช้ AI)
+
+The competition requires: the tools used, **at least 5 key prompts**, and the problems hit and how they were fixed.
+It also requires listing any AI-made images, audio or icons.
+
+## Tools used
+| Tool | What it was used for |
+|---|---|
+| Claude Code (Claude Opus 5.5) | Summarizing the rules, planning, researching the reference course, designing the UI, coding |
+
+## Key prompts
+| # | Date | Prompt (summary) | What AI produced | What we checked or changed |
+|---|---|---|---|---|
+| 1 | 2026-11-15 | Asked for a summary of the competition rules PDF | A summary of the rules, timeline, scoring and what to submit | Checked against the PDF. Found two inconsistencies (10 vs 5 finalist teams, and a criterion number missing) |
+| 2 | 2026-11-15 | Chose Topic 3 and asked AI to mark the rules and deliverables to keep | A requirements checklist | |
+| 3 | 2026-11-15 | Asked what a personal tutor app would need | A must-have / nice-to-have feature list, advice to skip the live AI chatbot because of the API-key rule | Kept the focus on Topic 3 (accessibility) |
+| 4 | 2026-11-15 | Asked AI to look up the university's curriculum to find a reference class | Found KMUTNB course 020413101 Computer Programming in the CED-2569 curriculum, and suggested an intro programming lesson | |
+| 5 | 2026-11-15 | Compared UI layouts and styles | ASCII wireframes for three layouts. We chose step-by-step cards and a fun, game-like style | |
+| 6 | 2026-11-15 | "Get ready to finish this project": build the whole app from the plan in CLAUDE.md | The full app (HTML/CSS/JS): 4 lessons with 23 cards, 17 hard words, 12 quiz questions, read aloud, themes, text sizes, simple Thai and English toggles, stars and badges. AI also wrote an automated test that clicks through every lesson and quiz (48 checks passed) | TODO: both team members check every card and quiz answer in `js/data.js` against the course content |
+| 7 | 2026-11-15 | Asked whether the rules limit the gameplay design, then switched the main topic to Topic 4 (games) and asked for one mini-game per lesson | AI checked the rules (no limit on game type) and planned 4 mini-games, one per lesson. It wrote `js/games.js`, the scoring, combos, XP/levels and 3 new badges, and an automated test that plays every game (93 checks passed) | We chose the lesson flow (cards → game → quiz) and asked for all 4 games. TODO: play every level ourselves and check the game content in `js/data.js` |
+| 8 | 2026-11-15 | Asked for a plan to grow the lessons into 3 levels (intro, real lessons, advanced), based on free and open lessons, to discuss first | AI looked up open courses and their licenses (CS50 and CS Unplugged are CC BY-NC-SA 4.0; Khan Academy's license couldn't be confirmed; the สสวท. textbook is copyrighted, so it's only a reference) and proposed lesson topics and mini-games | We decided to merge levels 2 and 3 into one track, to make development easier |
+| 9 | 2026-11-15 | "Recreate first, keep the old theme and config": rebuild the app with games from scratch | AI proposed 4 game designs and we chose "Puzzle + Boss". AI rebuilt the app: 10 lessons in 2 tracks, a Code Puzzle engine (22 levels: loops, if/else, multi-map, debug levels), a Bug Boss engine, XP/levels/badges. It wrote an automated test that checks every puzzle solution and plays all 10 lessons (251 checks pass) | We chose the design, the merged track, and to skip battle mode. TODO: both team members check every card, puzzle and boss question in `js/content/` |
+| 10 | 2026-11-15 | After testing: "doesn't seem promising because of how it's introduced. Cut to only grid gameplay, and let the user choose the language at the start: C and Python" | AI asked how code should be written (we chose tap first, type later), what to keep (short tips, stars/XP/badges, word pop-ups) and switching (anytime). It rebuilt the game: language picker, 18 levels in 6 chapters, tips with code in both languages, every block shown as real code, a typing mode with small Python and C parsers and Thai error messages. The automated test checks every level, both parsers and plays all 18 levels (167 checks pass) | We decided the new direction and the 3 choices above. TODO: both team members check the tips, levels and the code examples in both languages |
+
+## Problems and fixes
+| Problem | How it was fixed |
+|---|---|
+| The Google Drive connector couldn't open the rules PDF ("not found") | Downloaded it from the public Drive download link instead |
+| Node.js wasn't installed, and the Chrome extension wasn't connected, so the app couldn't be tested the usual way | Ran Chrome in headless mode with a test page that clicks through every screen and checks the results |
+| The test server's port (8765) was already in use | Ran it on another port (8799) |
+| The ◐ theme icon didn't show in the font | Replaced it with a small drawn (SVG) icon |
+| Changing a setting during a quiz restarted the quiz | The app now waits until the quiz is finished before redrawing the screen |
+| After the rebuild, the "💡 ดูเฉลย" (solution) button was visible from the start, which would let students skip every puzzle. The automated test missed it because it only checked the `hidden` attribute | Found it in a screenshot. The `.btn` style overrode `hidden`, so a CSS rule now always hides hidden elements. The test now checks what's actually visible on screen |
+| The C syntax notes in the tips contain literal braces like `{ }`, but the hard-word markup `{คำ}` treated them as words and deleted them, so students would have read the notes with the braces missing | Found by the automated test. The markup now only matches Thai words, and the test checks that the C note still shows `{ }` |
+
+## AI-generated media (images, audio, icons)
+| File | Tool | Notes |
+|---|---|---|
+| Mascot "น้องบิต" (robot SVG in `js/app.js`) | Claude Code | Drawn as code (SVG shapes), not a copied image. Bosses and map tiles are standard emoji |
+| Flowchart shapes, box and if/else diagrams (SVG in `js/app.js`) | Claude Code | Drawn as code |
+| Read-aloud voice | Browser's built-in speech (Web Speech API) | Not an AI-made recording; it's generated live on the user's device |

@@ -150,11 +150,13 @@ main { flex: 1; width: 100%; max-width: 46rem; margin: 0 auto; padding: 1rem 1re
 /* ---------- Mascot ---------- */
 .mascot { width: 6rem; flex: none; color: var(--primary); }
 .mascot svg { width: 100%; height: auto; display: block; overflow: visible; }
-.m-head, .m-ear { fill: var(--primary); }
+.m-head, .m-ear { fill: var(--bit, var(--primary)); } /* --bit = the color the student picked */
+:root[data-theme="contrast"] .m-head, :root[data-theme="contrast"] .m-ear { fill: var(--primary); }
 .m-face { fill: var(--surface); }
 .m-eye { fill: var(--text); }
 .m-mouth { fill: none; stroke: var(--text); stroke-width: 4; stroke-linecap: round; }
-.m-line { stroke: var(--primary); stroke-width: 4; }
+.m-line { stroke: var(--bit, var(--primary)); stroke-width: 4; }
+:root[data-theme="contrast"] .m-line { stroke: var(--primary); }
 .m-accent { fill: var(--accent); }
 .m-cheek { fill: #ff8fab; opacity: .7; }
 :root[data-theme="contrast"] .m-face { stroke: #fff; stroke-width: 2; }
@@ -322,6 +324,31 @@ a.lvl:hover { border-color: var(--primary); }
 .lvl.locked .lvl-num { font-size: .8rem; }
 .lvl-stars { font-size: .7rem; letter-spacing: .05em; }
 
+/* challenge tiles */
+.lvl.challenge { border-color: var(--accent); border-width: 3px; }
+.lvl.challenge.open { background: var(--accent); border-color: var(--accent); color: #000; }
+.lvl.challenge.open .star { color: #000; opacity: .45; }
+.lvl.challenge.locked { border-style: dashed; }
+.lvl-tag { font-size: .7rem; font-weight: 700; line-height: 1.1; }
+.lvl-need { font-size: .7rem; font-weight: 700; }
+
+/* ---------- Home: star rewards ---------- */
+.rewards { background: var(--surface); border: var(--bw) solid var(--accent); border-radius: var(--radius); padding: .8rem 1rem; margin-bottom: 1rem; }
+.rewards .section-title { margin-top: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; }
+.rewards .note { font-family: var(--font); font-size: .75rem; color: var(--muted); }
+.reward-item { margin: .5rem 0 0; font-size: .9rem; }
+.reward-item.got { color: var(--ok); }
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.2rem, 1fr)); gap: .5rem; }
+.swatch {
+  display: flex; flex-direction: column; align-items: center; gap: .2rem; padding: .4rem .2rem; cursor: pointer;
+  background: var(--surface); color: var(--text); border: var(--bw) solid var(--border); border-radius: 12px; font-size: .8rem;
+}
+.swatch:hover:not(:disabled) { border-color: var(--primary); }
+.swatch:disabled { cursor: not-allowed; opacity: .6; }
+.swatch[aria-pressed="true"] { border-color: var(--text); border-width: 3px; font-weight: 700; }
+.swatch-dot { width: 1.8rem; height: 1.8rem; border-radius: 50%; background: var(--sw); display: grid; place-items: center; font-size: .8rem; border: 2px solid var(--text); }
+.swatch:disabled .swatch-dot { background: var(--bg); }
+
 /* ---------- Level: short tip ---------- */
 .tip-box { margin-bottom: .8rem; }
 .tip-box summary { cursor: pointer; font-family: var(--font-fun); font-size: 1.1rem; }
@@ -416,6 +443,9 @@ a.lvl:hover { border-color: var(--primary); }
 }
 .pz-slot-btn[aria-pressed="true"] { border-style: solid; border-color: var(--primary); color: var(--primary); font-weight: 700; background: var(--primary-soft); }
 :root[data-theme="contrast"] .pz-slot-btn[aria-pressed="true"] { color: var(--text); }
+.pz-stepbar { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; padding: .5rem; border: var(--bw) dashed var(--accent); border-radius: 14px; }
+.pz-stepbar .btn.primary { flex: 1 1 10rem; }
+.bubble code { font-family: ui-monospace, Menlo, Consolas, monospace; background: var(--code-bg); padding: 0 .3rem; border-radius: 6px; }
 .pz-run { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .8rem; }
 .pz-run .btn { flex: 1 1 7rem; }
 .pz-win { text-align: center; margin-top: 1rem; padding: 1rem; background: var(--surface); border: var(--bw) solid var(--ok); border-radius: var(--radius); }

@@ -25,7 +25,12 @@ Entry for the KMUTNB ComEdu Open House 2027 Vibe Coding Challenge, Topic 4: ห�
   - Mistakes show the line number and a Thai explanation, like "ลืม ; ท้ายคำสั่ง" (missing `;`) or "ลืมเครื่องหมาย :" (missing `:`).
   - The running line is highlighted.
   - Tap and type stay in sync.
-- **Rewards:** stars for short programs, XP and levels (300 XP each), and 8 badges, including ⌨️ typing your own code and 🌏 winning in both languages.
+- **Rewards:** stars for short programs, XP and levels (300 XP each), and 9 badges, including ⌨️ typing your own code and 🌏 winning in both languages.
+- **🎁 Star rewards** (stars count toward milestones and are never spent):
+  - 👣 **Step mode** at 5 ⭐: run one line at a time. Bit explains each step, for example "`gem_here()` is true ✓, so do the `if` part". You can run the rest or stop at any time.
+  - 🎨 **Bit colors:** purple, then green 8 ⭐, orange 15, pink 22, blue 30, gold 40. The high-contrast theme always keeps Bit in the theme color.
+  - ⭐ **Challenge levels:** one per chapter, unlocked with 2 stars per level on average in that chapter. They never block the main path. The loops challenge introduces nested loops; the debugging challenge has two bugs.
+  - Hints, the solution button, read aloud and all accessibility settings are always free.
 - **Help:** a hint after every failed run, and a solution button after 2 fails, so no one gets stuck.
 - **Accessibility:**
   - 🔊 Read aloud in Thai (Web Speech API)
@@ -49,10 +54,10 @@ Comments (`#` in Python, `//` and `/* */` in C) are allowed.
 | `index.html` | Page shell: header, word pop-up, settings dialog (including the language) |
 | `css/style.css` | Themes, text sizes, map, editor, animations |
 | `js/content/words.js` | The hard-word list and the badges |
-| `js/content/chapter-1.js` … `chapter-6.js` | One file per chapter: levels and tips. **`chapter-1.js` explains the format.** |
+| `js/content/chapter-1.js` … `chapter-6.js` | One file per chapter: levels, a challenge level and tips. **`chapter-1.js` explains the format.** |
 | `js/puzzle.js` | The game engine: grid, running programs, code in Python and C, the parsers for typed code, the editor |
 | `js/app.js` | Screens and routes (language picker, map, level), settings, read aloud, saving, stars, XP and badges |
-| `tests/play-test.html` | Automated test: checks every level, the parsers, and plays all 18 levels on screen |
+| `tests/play-test.html` | Automated test: checks every level and challenge, the parsers, step mode and Bit colors, and plays all 24 levels on screen |
 
 ## Run locally
 ```

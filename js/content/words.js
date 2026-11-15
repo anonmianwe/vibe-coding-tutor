@@ -29,6 +29,7 @@ window.CONTENT = {
     { id: "typist", icon: "⌨️", name: "นักพิมพ์โค้ด", desc: "ผ่านด่านด้วยการพิมพ์โค้ดเอง" },
     { id: "bilingual", icon: "🌏", name: "สองภาษา", desc: "ผ่านด่านด้วยทั้ง Python และ C" },
     { id: "loop", icon: "🔁", name: "เจ้าแห่งลูป", desc: "ผ่านบทวนซ้ำครบทุกด่าน" },
+    { id: "challenger", icon: "🌟", name: "ผู้พิชิต", desc: "ผ่านด่านท้าทายด้วยตัวเอง" },
     { id: "puzzle", icon: "⚡", name: "ทางลัดสายฟ้า", desc: "ได้ 3 ดาว 5 ด่าน" },
     { id: "persist", icon: "💪", name: "ไม่ยอมแพ้", desc: "ผิดแล้วลองใหม่ จนผ่านเอง" },
     { id: "words", icon: "📖", name: "นักล่าคำศัพท์", desc: "เปิดดูคำศัพท์ 5 คำ" },

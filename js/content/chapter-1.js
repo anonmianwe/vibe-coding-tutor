@@ -16,6 +16,8 @@
 //       text / simple / en          the tip in Thai, very simple Thai, and English. {คำ} = a hard word from words.js
 //       code: { python, c }         example code in each language
 //       notes: { python, c }        a note about that language's syntax
+//   challenge: one extra, harder level in the same format. It unlocks when the student has
+//     2 stars per level on average in this chapter, and it never blocks the next chapter.
 //   Program text: M = move, L = turn left, R = turn right, P = pick up gem,
 //     5{ ... } = repeat 5 times, ?wall{ then }{ else } = if the way ahead is blocked, ?gem{ }{ } = if there's a gem here
 CONTENT.CHAPTERS.push({
@@ -68,5 +70,9 @@ CONTENT.CHAPTERS.push({
       map: ["..G", ".#.", "S.."], blocks: ["move", "left", "right"], solution: "M M L M M", best: 5,
       flow: ["เริ่มต้น", "เดินหน้า", "เดินหน้า", "หันซ้าย", "เดินหน้า", "เดินหน้า", "จบ"],
       hint: "turn_left ตอนที่หันหน้าไปทางขวา จะทำให้หันขึ้นข้างบน" }
-  ]
+  ],
+  // Challenge level: unlocks when the student has 2 stars per level on average in this chapter (see app.js)
+  challenge: { title: "ทางคดเคี้ยว", desc: "ทางยาวที่เลี้ยวไปมาหลายครั้ง ใช้ได้แค่คำสั่งพื้นฐาน",
+    map: ["S.#...", "#.#.#.", "#...#G"], blocks: ["move", "left", "right"], solution: "M R M M L M M L M M R M M R M M", best: 16,
+    hint: "แบ่งเป็นช่วง ๆ: ลง → ขวา → ขึ้น → ขวา → ลง นับช่องแต่ละช่วงให้ดี" }
 });

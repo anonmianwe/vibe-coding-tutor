@@ -19,7 +19,7 @@ async function until(fn, ms = 6000) { const t = Date.now(); while (Date.now() - 
   f.src = '../index.html#/';
   // wait until the app has drawn its first screen (slower on the live site than locally)
   await until(() => f.contentWindow.Puzzle && f.contentDocument.querySelector('#app .screen'), 20000);
-  const w = f.contentWindow, d = f.contentDocument;
+  let w = f.contentWindow, d = f.contentDocument;
   const $ = (s) => d.querySelector(s), $$ = (s) => [...d.querySelectorAll(s)];
   const errs = [];
   w.addEventListener('error', (e) => errs.push(e.message));
@@ -28,13 +28,14 @@ async function until(fn, ms = 6000) { const t = Date.now(); while (Date.now() - 
   const { CHAPTERS, WORDS } = w.CONTENT;
   const LEVELS = [];
   CHAPTERS.forEach((ch) => ch.levels.forEach((def, k) => LEVELS.push({ ch, def, k })));
+  const CHAL = CHAPTERS.map((ch) => ({ ch, def: ch.challenge, k: 'challenge' }));
   const noHScroll = (where) => ok(d.documentElement.scrollWidth <= d.documentElement.clientWidth + 1, `no sideways scroll at 400px: ${where}`);
   const visible = (el) => el && el.offsetParent !== null;
 
   // ---- 1. content and engine checks (no screen) ----
-  ok(CHAPTERS.length === 6 && LEVELS.length === 18, `6 chapters, ${LEVELS.length} levels`);
-  for (const { ch, def, k } of LEVELS) {
-    const name = `${ch.id} ${k + 1}`;
+  ok(CHAPTERS.length === 6 && LEVELS.length === 18 && CHAL.every((c) => c.def), `6 chapters, ${LEVELS.length} levels, 6 challenges`);
+  for (const { ch, def, k } of LEVELS.concat(CHAL)) {
+    const name = k === 'challenge' ? `${ch.id} challenge` : `${ch.id} ${k + 1}`;
     const r = P.simulate(def, def.solution);
     ok(r.ok && r.blocks === def.best, `${name}: solution works and best = ${def.best} ${r.ok ? '' : r.msg}`);
     if (def.start) ok(!P.simulate(def, def.start).ok, `${name}: the buggy start program really fails`);
@@ -78,10 +79,12 @@ async function until(fn, ms = 6000) { const t = Date.now(); while (Date.now() - 
   for (let i = 0; i < LEVELS.length; i++) {
     const { ch, def, k } = LEVELS[i];
     const name = `${ch.id} ${k + 1}`;
+    let ran = false;
     if (i > 0) { w.location.hash = `#/level/${i}`; await wait(80); }
     ok($('.puzzle'), `${name}: level opens (unlocked)`);
     if (i === 0) {
       ok($('#pzTypeTab').disabled, 'typing mode is locked at the start');
+      ok($('#pzStep').disabled && $('#pzStep').textContent.includes('🔒'), 'step mode is locked at 0 stars');
       ok(!visible($('#pzSolve')), 'the solution button is hidden before any failed run');
       for (let n = 0; n < 3; n++) $('[data-add="move"]').click();
       ok($$('#pzProg .pz-code').map((c) => c.textContent).join('|') === 'move();|move();|move();', 'tapped blocks show as C code');
@@ -126,25 +129,82 @@ async function until(fn, ms = 6000) { const t = Date.now(); while (Date.now() - 
       await wait(50);
       noHScroll('nested debug level (C)');
       $('#pzSolve').click();
+    } else if (i === 13) { // step mode: next step, the if explains itself, then run the rest
+      ok(!$('#pzStep').disabled, 'step mode unlocked after 5 stars');
+      $('#pzSolve').click();
+      $('#pzStep').click();
+      ok(visible($('#pzStepBar')), 'step bar appears');
+      await until(() => $('#pzCoach').textContent.includes('ขั้นที่ 1'));
+      ok($('#pzCoach').textContent.includes('move'), 'step 1 explained: ' + $('#pzCoach').textContent.slice(0, 50));
+      $('#pzNextStep').click();
+      ok(await until(() => $('#pzCoach').textContent.includes('ขั้นที่ 2') && $('#pzCoach').textContent.includes('จริง')), 'step 2 says the if is true: ' + $('#pzCoach').textContent.slice(0, 60));
+      $('#pzRest').click();
+      ran = true;
+    } else if (i === 14) { // step mode: stop in the middle
+      $('#pzSolve').click();
+      $('#pzStep').click();
+      await until(() => $('#pzCoach').textContent.includes('ขั้นที่ 1'));
+      $('#pzStop').click();
+      ok(await until(() => !visible($('#pzStepBar')) && !$('#pzGo').disabled), 'stop ends step mode and the editor works again');
     } else {
       $('#pzSolve').click(); // load the solution
     }
-    $('#pzGo').click();
+    if (!ran) $('#pzGo').click();
     const won = await until(() => $('#pzResult .pz-win'), 8000);
     ok(won, `${name}: solved on screen`);
     if (!won) { log.push('   coach says: ' + ($('#pzCoach') || {}).textContent); break; }
     $('#pzNext').click(); await wait(80);
   }
 
-  // ---- 4. saving, rewards, settings ----
+  // ---- 4. challenge levels and Bit colors ----
+  w.location.hash = '#/'; await wait(80);
+  ok($$('.lvl.challenge.locked').length >= 1, 'challenge levels stay locked without enough stars');
+  // give 3 stars on every main level, then reload
+  const p0 = JSON.parse(localStorage.getItem('vct3-progress'));
+  LEVELS.forEach(({ ch, k }) => { p0.stars[`${ch.id}-${k + 1}`] = 3; });
+  localStorage.setItem('vct3-progress', JSON.stringify(p0));
+  w.location.reload();
+  await wait(300);
+  await until(() => f.contentDocument.querySelector('#app .home'), 20000);
+  w = f.contentWindow; d = f.contentDocument; w.PUZZLE_DELAY = 0;
+  w.addEventListener('error', (e) => errs.push(e.message));
+  ok($$('.lvl.challenge.open').length === 6, 'all 6 challenge levels unlock with 3 stars everywhere');
+  for (let ci = 0; ci < 6; ci++) {
+    w.location.hash = `#/challenge/${ci}`; await wait(80);
+    const def = CHAPTERS[ci].challenge;
+    ok($('.puzzle') && $('h1').textContent.includes('ท้าทาย'), `challenge ${ci + 1} opens`);
+    if (ci === 2) { // nested loops, typed in C
+      ok($('#tipBox') && $('#tipBox').open, 'nested-loop challenge shows its tip');
+      $('#pzTypeTab').click();
+      $('#pzText').value = 'for (int i = 0; i < 2; i++) {\n    for (int j = 0; j < 3; j++) {\n        move();\n    }\n    turn_right();\n    for (int j = 0; j < 3; j++) {\n        move();\n    }\n    turn_left();\n}';
+    } else {
+      if (def.start) ok($$('#pzProg .pz-node').length === 7, 'debug challenge starts with the buggy nested program');
+      $('#pzSolve').click();
+    }
+    $('#pzGo').click();
+    const won = await until(() => $('#pzResult .pz-win'), 8000);
+    ok(won, `challenge ${ci + 1} solved on screen`);
+    if (ci === 2 && won) ok($$('.pz-win .big-stars .star.on').length === 3, 'typed nested loop gets 3 stars');
+    if (!won) log.push('   coach says: ' + $('#pzCoach').textContent);
+  }
+  w.location.hash = '#/'; await wait(80);
+  const gold = $('[data-color="gold"]');
+  ok(gold && !gold.disabled, 'gold color unlocked with many stars');
+  gold.click();
+  ok(d.documentElement.style.getPropertyValue('--bit') === '#c99a06', 'choosing gold sets Bit color');
+  ok(w.getComputedStyle($('.m-head')).fill === 'rgb(201, 154, 6)', 'Bit is drawn in gold');
+  noHScroll('home with rewards');
+
+  // ---- 5. saving, rewards, settings ----
   const p = JSON.parse(localStorage.getItem('vct3-progress'));
-  ok(Object.keys(p.stars).length === LEVELS.length, 'all levels saved');
-  ok(['first', 'persist', 'typist', 'bilingual', 'loop', 'all'].every((b) => p.badges.includes(b)), 'badges: ' + p.badges.join(', '));
+  ok(Object.keys(p.stars).length === LEVELS.length + 6, 'all levels and challenges saved');
+  ok(['first', 'persist', 'typist', 'bilingual', 'loop', 'all', 'challenger'].every((b) => p.badges.includes(b)), 'badges: ' + p.badges.join(', '));
   ok(p.xp > 0 && Number($('#levelNum').textContent) >= 2, `XP ${p.xp}, level ${$('#levelNum').textContent}`);
   w.location.hash = '#/'; await wait(80);
-  ok($('.home') && $$('.lvl.done').length === LEVELS.length, 'home map shows every level done');
+  ok($('.home') && $$('.lvl.done').length === LEVELS.length + 6, 'home map shows every level and challenge done');
   noHScroll('home');
   $('#btnTheme').click(); ok(d.documentElement.dataset.theme === 'contrast', 'theme button cycles');
+  ok(w.getComputedStyle($('.m-head')).fill === 'rgb(255, 230, 0)', 'high-contrast theme keeps Bit yellow, ignoring the chosen color');
   $('#btnSize').click(); ok(d.documentElement.dataset.size === 'L', 'size button cycles');
   const st = JSON.parse(localStorage.getItem('vct-settings'));
   ok(st.theme === 'contrast' && st.lang === 'c', 'settings saved (theme and language)');

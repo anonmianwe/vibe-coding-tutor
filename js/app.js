@@ -13,9 +13,23 @@
   const TYPING_UNLOCK = 'seq'; // typing mode unlocks after finishing this chapter
   const LANGS = { python: '🐍 Python', c: '🅲 C' };
 
-  // every level in one list, with its chapter
+  // every main level in one list, with its chapter. They unlock one after another.
   const LEVELS = [];
   CHAPTERS.forEach((ch) => ch.levels.forEach((def, k) => LEVELS.push({ def, ch, k, id: `${ch.id}-${k + 1}` })));
+  // one optional challenge level per chapter: unlocks with 2 stars per level on average in that chapter
+  const CHALLENGES = [];
+  CHAPTERS.forEach((ch, ci) => { if (ch.challenge) CHALLENGES.push({ def: ch.challenge, ch, ci, id: `${ch.id}-c`, challenge: true }); });
+
+  // ---------- Star rewards: stars count toward milestones, they are never spent ----------
+  const STEP_NEED = 5; // step mode
+  const BIT_COLORS = [
+    { id: 'purple', name: 'ม่วง', color: null, need: 0 }, // null = the theme's own color
+    { id: 'green', name: 'เขียว', color: '#1f9d55', need: 8 },
+    { id: 'orange', name: 'ส้ม', color: '#e8710a', need: 15 },
+    { id: 'pink', name: 'ชมพู', color: '#d6336c', need: 22 },
+    { id: 'blue', name: 'ฟ้า', color: '#1c7ed6', need: 30 },
+    { id: 'gold', name: 'ทอง', color: '#c99a06', need: 40 }
+  ];
 
   // ---------- Saving (localStorage, no login) ----------
   const store = {
@@ -30,7 +44,7 @@
 
   const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   // lang stays null until the student picks one on the start screen
-  const DEFAULT_SETTINGS = { size: 'M', theme: 'normal', rate: 0.9, simple: false, showEn: false, motion: !reduceMotion, font: 'sarabun', lang: null };
+  const DEFAULT_SETTINGS = { size: 'M', theme: 'normal', rate: 0.9, simple: false, showEn: false, motion: !reduceMotion, font: 'sarabun', lang: null, bitColor: 'purple' };
   const settings = Object.assign({}, DEFAULT_SETTINGS, store.get('vct-settings', {}));
   // progress.stars[levelId] = best stars · progress.wins = { python: true, c: true } (languages used to win)
   const PROGRESS_KEY = 'vct3-progress';
@@ -57,7 +71,11 @@
   const isUnlocked = (i) => i === 0 || starsOf(i - 1) > 0;
   const chapterDone = (chId) => LEVELS.filter((l) => l.ch.id === chId).every((l) => progress.stars[l.id]);
   const canType = () => chapterDone(TYPING_UNLOCK);
-  const totalStars = () => LEVELS.reduce((n, l) => n + (progress.stars[l.id] || 0), 0);
+  const totalStars = () => LEVELS.concat(CHALLENGES).reduce((n, l) => n + (progress.stars[l.id] || 0), 0);
+  const canStep = () => totalStars() >= STEP_NEED;
+  const chapterStars = (ch) => LEVELS.filter((l) => l.ch === ch).reduce((n, l) => n + (progress.stars[l.id] || 0), 0);
+  const challengeNeed = (ch) => ch.levels.length * 2;
+  const challengeOpen = (c) => chapterStars(c.ch) >= challengeNeed(c.ch);
   const level = () => Math.floor((progress.xp || 0) / XP_PER_LEVEL) + 1;
   const stars = (n, max = 3) => Array.from({ length: max }, (_, i) => `<span class="star ${i < n ? 'on' : ''}" aria-hidden="true">★</span>`).join('');
 
@@ -150,6 +168,9 @@
     r.dataset.theme = settings.theme;
     r.dataset.motion = settings.motion ? 'on' : 'off';
     r.dataset.font = settings.font;
+    // Bit's color (a star reward). The high-contrast theme ignores it in the CSS.
+    const bit = BIT_COLORS.find((c) => c.id === settings.bitColor);
+    if (bit && bit.color) r.style.setProperty('--bit', bit.color); else r.style.removeProperty('--bit');
     $('#btnSize').setAttribute('aria-label', `เปลี่ยนขนาดตัวอักษร (ตอนนี้: ${SIZE_NAMES[settings.size]})`);
     $('#btnTheme').setAttribute('aria-label', `เปลี่ยนสีหน้าจอ (ตอนนี้: ${THEME_NAMES[settings.theme]})`);
     syncSettingsForm();
@@ -163,7 +184,7 @@
       if (currentPuzzle && app.querySelector('.puzzle')) {
         currentPuzzle.refresh(old);
         const tip = $('#tipBox');
-        if (tip) tip.outerHTML = tipHtml(LEVELS[currentLevel].def.tip, tip.open);
+        if (tip) tip.outerHTML = tipHtml(currentEntry.def.tip, tip.open);
         wireTip();
       } else if (app.querySelector('.home')) route();
       toast(`ภาษา: ${LANGS[value]}`);
@@ -171,7 +192,7 @@
     if (rerender && app.querySelector('.home')) route();
     if (rerender && app.querySelector('.puzzle') && $('#tipBox')) { // simple Thai / English in the tip
       const tip = $('#tipBox');
-      tip.outerHTML = tipHtml(LEVELS[currentLevel].def.tip, tip.open);
+      tip.outerHTML = tipHtml(currentEntry.def.tip, tip.open);
       wireTip();
     }
   }
@@ -315,11 +336,22 @@
         return `<li><a class="lvl ${s ? 'done' : 'open'}" href="#/level/${n}" aria-label="ด่าน ${k + 1}: ${esc(def.title)}${s ? ` ได้ ${s} ดาว` : ''}">
           <span class="lvl-num">${def.start ? '🐞' : k + 1}</span><span class="lvl-stars">${stars(s)}</span></a></li>`;
       }).join('');
+      // the chapter's challenge level
+      const c = CHALLENGES.find((x) => x.ch === ch);
+      let chal = '';
+      if (c) {
+        const s = progress.stars[c.id] || 0;
+        chal = challengeOpen(c)
+          ? `<li><a class="lvl challenge ${s ? 'done' : 'open'}" href="#/challenge/${ci}" aria-label="ด่านท้าทาย: ${esc(c.def.title)}${s ? ` ได้ ${s} ดาว` : ''}">
+              <span class="lvl-num">⭐</span><span class="lvl-tag">ท้าทาย</span><span class="lvl-stars">${stars(s)}</span></a></li>`
+          : `<li><span class="lvl challenge locked" aria-label="ด่านท้าทาย ล็อกอยู่ ต้องได้ ${challengeNeed(ch)} ดาวในบทนี้ ตอนนี้ได้ ${chapterStars(ch)}">
+              🔒<span class="lvl-tag">ท้าทาย</span><span class="lvl-need">${chapterStars(ch)}/${challengeNeed(ch)}⭐</span></span></li>`;
+      }
       const doneN = ch.levels.filter((_, k) => progress.stars[`${ch.id}-${k + 1}`]).length;
       return `<li class="chapter">
         <h2 class="chapter-title"><span aria-hidden="true">${ch.icon}</span> บทที่ ${ci + 1}: ${ch.title} <span class="chapter-en" lang="en">${ch.en}</span>
           <span class="chapter-count">${doneN}/${ch.levels.length}</span></h2>
-        <ol class="lvl-grid">${tiles}</ol></li>`;
+        <ol class="lvl-grid">${tiles}${chal}</ol></li>`;
     }).join('');
     const badges = BADGES.map((b) => {
       const got = progress.badges.includes(b.id);
@@ -339,15 +371,49 @@
           <a class="btn small" href="#/start">ภาษา: ${LANGS[settings.lang]} ⇄</a></p>
         <p class="note">${canType() ? '⌨️ ปลดล็อกโหมดพิมพ์โค้ดแล้ว!' : '⌨️ โหมดพิมพ์โค้ดเอง จะปลดล็อกเมื่อผ่านบทที่ 1'}</p>
       </div>
+      ${rewardsHtml()}
       <ol class="chapters">${chapters}</ol>
       <h2 class="section-title">เหรียญรางวัล (${progress.badges.length}/${BADGES.length})</h2>
       <ul class="badge-shelf">${badges}</ul>
     </section>`;
     $('#greetRead').addEventListener('click', (e) => speak(greet, e.currentTarget));
+    app.querySelectorAll('[data-color]').forEach((b) => b.addEventListener('click', () => {
+      setSetting('bitColor', b.dataset.color);
+      app.querySelectorAll('[data-color]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      toast(`เปลี่ยนสีน้องบิตเป็นสี${b.dataset.name}แล้ว`);
+    }));
+  }
+
+  // the "star rewards" panel on the home screen
+  function rewardsHtml() {
+    const have = totalStars();
+    const goals = [STEP_NEED].concat(BIT_COLORS.map((c) => c.need)).filter((n) => n > have).sort((x, y) => x - y);
+    const next = goals[0];
+    const prevGoal = [0, STEP_NEED].concat(BIT_COLORS.map((c) => c.need)).filter((n) => n <= have).sort((x, y) => y - x)[0];
+    const pct = next ? ((have - prevGoal) / (next - prevGoal)) * 100 : 100;
+    const swatches = BIT_COLORS.map((c) => {
+      const open = have >= c.need;
+      const on = settings.bitColor === c.id;
+      return `<button type="button" class="swatch" ${open ? `data-color="${c.id}" data-name="${c.name}"` : 'disabled'} aria-pressed="${on}"
+        aria-label="สีน้องบิต: ${c.name}${open ? '' : ` ล็อกอยู่ ต้องมี ${c.need} ดาว`}" style="--sw:${c.color || 'var(--primary)'}">
+        <span class="swatch-dot" aria-hidden="true">${open ? '' : '🔒'}</span><span class="swatch-name">${c.name}${open ? '' : ` ${c.need}⭐`}</span></button>`;
+    }).join('');
+    return `<section class="rewards" aria-labelledby="rewardsTitle">
+      <h2 class="section-title" id="rewardsTitle">🎁 รางวัลดาว <span class="note">ดาวไม่ถูกใช้หมด สะสมไว้ปลดล็อก</span></h2>
+      <div class="xp-row"><span>⭐ ${have} ดาว</span><span>${next ? `อีก ${next - have} ดาว ถึงรางวัลต่อไป` : 'ปลดล็อกครบทุกรางวัลแล้ว!'}</span></div>
+      <div class="progress xp-bar" role="progressbar" aria-label="ดาวสู่รางวัลต่อไป" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}">
+        <div class="bar" style="width:${pct}%"></div></div>
+      <p class="reward-item ${canStep() ? 'got' : ''}">👣 <b>โหมดทีละขั้น</b> (${STEP_NEED}⭐): ${canStep()
+        ? 'ปลดล็อกแล้ว! กด 👣 ทีละขั้น ในด่าน เพื่อรันทีละบรรทัด และดูว่าเงื่อนไขเป็นจริงหรือเท็จ'
+        : 'รันโปรแกรมทีละบรรทัด และดูว่าเงื่อนไขเป็นจริงหรือเท็จ'}</p>
+      <p class="reward-item">⭐ <b>ด่านท้าทาย</b>: ทุกบทมี 1 ด่าน ปลดล็อกเมื่อได้ดาวเฉลี่ย 2 ดวงต่อด่านในบทนั้น</p>
+      <p class="g-label">🎨 สีน้องบิต</p>
+      <div class="swatches" role="group" aria-label="เลือกสีน้องบิต">${swatches}</div>
+    </section>`;
   }
 
   // ---------- Level ----------
-  let currentLevel = 0;
+  let currentEntry = null; // { def, ch, id, k? , challenge? }
   function tipHtml(tip, open) {
     if (!tip) return '';
     const lang = settings.lang;
@@ -367,7 +433,7 @@
     </details>`;
   }
   function wireTip() {
-    const tip = LEVELS[currentLevel].def.tip;
+    const tip = currentEntry && currentEntry.def.tip;
     if (!tip || !$('#tipBox')) return;
     $('#tipRead').addEventListener('click', (e) => {
       const text = settings.simple && tip.simple ? tip.simple : tip.text;
@@ -377,48 +443,59 @@
     $('#tipEn').addEventListener('click', () => { setSetting('showEn', !settings.showEn, true); $('#tipEn').focus(); });
   }
 
-  function renderLevel(i) {
-    currentLevel = i;
-    const L = LEVELS[i];
-    const chapterNo = CHAPTERS.indexOf(L.ch) + 1;
+  // entry = a main level (index i) or a challenge level (i = null)
+  function renderLevel(entry, i) {
+    currentEntry = entry;
+    const chapterNo = CHAPTERS.indexOf(entry.ch) + 1;
+    const where = entry.challenge ? '⭐ ด่านท้าทาย' : `ด่าน ${entry.k + 1}/${entry.ch.levels.length}`;
     const head = `<div class="screen-head">
         <a href="#/" class="btn small ghost">← แผนที่ด่าน</a>
-        <h1>${L.ch.icon} บทที่ ${chapterNo}: ${L.ch.title} · ด่าน ${L.k + 1}/${L.ch.levels.length}</h1>
+        <h1>${entry.ch.icon} บทที่ ${chapterNo}: ${entry.ch.title} · ${where}</h1>
       </div>`;
     currentPuzzle = window.Puzzle.mount({
-      el: app, def: L.def, head,
-      tipHtml: tipHtml(L.def.tip, !progress.stars[L.id]), // open the tip until the level is solved
+      el: app, def: entry.def, head,
+      tipHtml: tipHtml(entry.def.tip, !progress.stars[entry.id]), // open the tip until the level is solved
       esc, speak, mascot, mascotSvg: MASCOT, stars,
       motion: () => settings.motion,
       lang: () => settings.lang,
-      canType,
-      finish: (s, info) => finishLevel(i, s, info)
+      canType, canStep, stepNeed: STEP_NEED,
+      finish: (s, info) => finishLevel(entry, i, s, info)
     });
     wireTip();
   }
 
-  function finishLevel(i, s, info) {
-    const L = LEVELS[i];
+  function finishLevel(entry, i, s, info) {
     const typingBefore = canType();
-    const prev = progress.stars[L.id] || 0;
-    progress.stars[L.id] = Math.max(prev, s);
+    const stepBefore = canStep();
+    const openBefore = CHALLENGES.filter(challengeOpen).length;
+    const colorsBefore = BIT_COLORS.filter((c) => totalStars() >= c.need).length;
+    const prev = progress.stars[entry.id] || 0;
+    progress.stars[entry.id] = Math.max(prev, s);
     if (!info.usedSolution) progress.wins[settings.lang] = true;
     saveProgress();
-    addXp((progress.stars[L.id] - prev) * 30 + (prev ? 0 : 20)); // 20 XP for a first clear, 30 per new star
+    addXp((progress.stars[entry.id] - prev) * 30 + (prev ? 0 : 20)); // 20 XP for a first clear, 30 per new star
 
     award('first');
     if (info.fails > 0 && !info.usedSolution) award('persist');
     if (info.typed && !info.usedSolution) award('typist');
     if (progress.wins.python && progress.wins.c) award('bilingual');
+    if (entry.challenge && !info.usedSolution) award('challenger');
     if (chapterDone('loop')) award('loop');
-    if (LEVELS.filter((l) => progress.stars[l.id] === 3).length >= 5) award('puzzle');
+    if (LEVELS.concat(CHALLENGES).filter((l) => progress.stars[l.id] === 3).length >= 5) award('puzzle');
     if (LEVELS.every((l) => progress.stars[l.id])) award('all');
-    if (!typingBefore && canType()) setTimeout(() => toast('⌨️ ปลดล็อกโหมดพิมพ์โค้ดแล้ว! ลองพิมพ์โค้ดเองในด่านต่อไป'), 2000);
+    // tell the student about anything new the stars unlocked
+    const news = [];
+    if (!typingBefore && canType()) news.push('⌨️ ปลดล็อกโหมดพิมพ์โค้ดแล้ว!');
+    if (!stepBefore && canStep()) news.push('👣 ปลดล็อกโหมดทีละขั้นแล้ว!');
+    if (CHALLENGES.filter(challengeOpen).length > openBefore) news.push('⭐ ปลดล็อกด่านท้าทายใหม่ ดูที่แผนที่ด่าน!');
+    if (BIT_COLORS.filter((c) => totalStars() >= c.need).length > colorsBefore) news.push('🎨 ปลดล็อกสีน้องบิตใหม่ เลือกได้ที่หน้าแรก!');
+    news.forEach((m, k) => setTimeout(() => toast(m), 2000 + k * 2800));
     updateHeader();
 
+    if (entry.challenge) return { href: '#/', label: '🗺️ กลับแผนที่ด่าน' };
     const next = LEVELS[i + 1];
     if (!next) return { href: '#/', label: '🏆 ผ่านครบทุกด่าน! กลับแผนที่' };
-    return next.ch === L.ch
+    return next.ch === entry.ch
       ? { href: `#/level/${i + 1}`, label: 'ด่านต่อไป ▶' }
       : { href: `#/level/${i + 1}`, label: `บทใหม่: ${next.ch.icon} ${next.ch.title} ▶` };
   }
@@ -436,7 +513,8 @@
     const [screen, n] = location.hash.replace(/^#\/?/, '').split('/');
     const i = parseInt(n, 10);
     if (!settings.lang || screen === 'start') renderStart();
-    else if (screen === 'level' && LEVELS[i] && isUnlocked(i)) renderLevel(i);
+    else if (screen === 'level' && LEVELS[i] && isUnlocked(i)) renderLevel(LEVELS[i], i);
+    else if (screen === 'challenge' && CHALLENGES.find((c) => c.ci === i && challengeOpen(c))) renderLevel(CHALLENGES.find((c) => c.ci === i), null);
     else renderHome();
     updateHeader();
     const f = focusAfter && document.getElementById(focusAfter);

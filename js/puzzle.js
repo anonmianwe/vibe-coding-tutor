@@ -11,8 +11,9 @@
 // Chapter files write programs as short text (see chapter-1.js): "3{M R M L}", "?wall{R}{M}".
 //
 // app.js calls Puzzle.mount(ctx) and gets back { refresh() } to call when the language changes. ctx has:
-//   el, def (this level), head (HTML for the top of the screen), tipHtml, index, total, esc, speak(text, btn), mascot(mood),
-//   mascotSvg, stars(n), motion(), lang() ("python" or "c"), canType(), finish(stars, info) -> { href, label }
+//   el, def (this level), head (HTML for the top of the screen), tipHtml, esc, speak(text, btn), mascot(mood),
+//   mascotSvg, stars(n), motion(), lang() ("python" or "c"), canType(), canStep(), stepNeed (stars to unlock step mode),
+//   finish(stars, info) -> { href, label }
 // Puzzle.simulate(def, programText) runs a program without drawing (used by the automated test).
 window.Puzzle = (() => {
   'use strict';
@@ -493,8 +494,14 @@ window.Puzzle = (() => {
       </div>
       <div class="pz-run">
         <button type="button" class="btn big primary" id="pzGo">▶ เริ่ม</button>
+        <button type="button" class="btn big" id="pzStep"></button>
         <button type="button" class="btn big" id="pzClear">🗑 ล้าง</button>
         <button type="button" class="btn big" id="pzSolve" hidden>💡 ดูเฉลย</button>
+      </div>
+      <div class="pz-stepbar" id="pzStepBar" role="group" aria-label="โหมดทีละขั้น" hidden>
+        <button type="button" class="btn big primary" id="pzNextStep">▶ ขั้นต่อไป</button>
+        <button type="button" class="btn" id="pzRest">⏩ รันที่เหลือ</button>
+        <button type="button" class="btn" id="pzStop">⏹ หยุด</button>
       </div>
       <div class="coach">${ctx.mascot('think')}<div class="bubble" id="pzCoach" aria-live="polite" tabindex="-1"><p>${
         def.start ? 'โปรแกรมนี้มีบั๊ก! กด ▶ เริ่ม เพื่อดูว่าผิดตรงไหน แล้วแก้ไข' : 'แตะคำสั่งเพื่อสร้างโปรแกรม แล้วกด ▶ เริ่ม'}</p></div></div>
@@ -604,6 +611,10 @@ window.Puzzle = (() => {
       tab.textContent = ctx.canType() ? '⌨️ พิมพ์โค้ด' : '⌨️ พิมพ์โค้ด 🔒';
       tab.disabled = !ctx.canType();
       tab.title = ctx.canType() ? '' : 'ผ่านบทที่ 1 ก่อน เพื่อปลดล็อก';
+      const step = $('#pzStep');
+      step.textContent = ctx.canStep() ? '👣 ทีละขั้น' : `👣 ทีละขั้น 🔒 ${ctx.stepNeed}⭐`;
+      step.disabled = !ctx.canStep() || st.running;
+      step.title = ctx.canStep() ? 'รันทีละบรรทัด' : `สะสม ${ctx.stepNeed} ดาว เพื่อปลดล็อก`;
     }
     function drawEditor() {
       drawLang();
@@ -667,11 +678,11 @@ window.Puzzle = (() => {
 
     function setBusy(busy) {
       st.running = busy;
-      root.querySelectorAll('.pz-editor button, #pzClear, #pzSolve, [data-map]').forEach((b) => { b.disabled = busy; });
+      root.querySelectorAll('.pz-editor button, #pzClear, #pzSolve, #pzStep, [data-map]').forEach((b) => { b.disabled = busy; });
       textArea().readOnly = busy;
       $('#pzGo').textContent = busy ? '⏳ กำลังทำงาน...' : '▶ เริ่ม';
       $('#pzGo').disabled = busy;
-      if (!busy) drawLang();
+      if (!busy) { st.stepping = false; $('#pzStepBar').hidden = true; drawLang(); }
     }
 
     function say(html, mood, speakText) {
@@ -741,7 +752,13 @@ window.Puzzle = (() => {
       say('นี่คือเฉลย กด ▶ เริ่ม เพื่อดูว่าทำงานอย่างไร (ใช้เฉลยแล้ว ด่านนี้จะได้ 1 ดาว)', 'think', 'นี่คือเฉลย กด เริ่ม เพื่อดูว่าทำงานอย่างไร');
     });
     root.querySelectorAll('[data-map]').forEach((b) => b.addEventListener('click', () => { if (!st.running) showMap(Number(b.dataset.map)); }));
-    $('#pzGo').addEventListener('click', run);
+    $('#pzGo').addEventListener('click', () => run(false));
+    $('#pzStep').addEventListener('click', () => { if (ctx.canStep()) run(true); });
+    // step mode: run() waits on a promise that these buttons resolve
+    const resume = () => { const r = st.stepResolve; st.stepResolve = null; if (r) r(); };
+    $('#pzNextStep').addEventListener('click', resume);
+    $('#pzRest').addEventListener('click', () => { st.stepping = false; $('#pzStepBar').hidden = true; resume(); });
+    $('#pzStop').addEventListener('click', () => { st.abort = true; resume(); });
 
     function clearResult() { $('#pzResult').innerHTML = ''; }
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -768,7 +785,28 @@ window.Puzzle = (() => {
       textArea().hidden = on;
     }
 
-    async function run() {
+    // what one step does, in words and in the chosen language (step mode)
+    function explain(ev, n) {
+      const py = lang() === 'python';
+      if (ev.b.t === 'if') {
+        const c = CONDS[ev.b.cond] + '()';
+        return `ขั้นที่ ${n}: <code>${c}</code> เป็น<b>${ev.cond ? 'จริง ✓' : 'เท็จ ✗'}</b> จึงไปทำส่วน <code>${ev.cond ? 'if' : 'else'}</code>`;
+      }
+      return `ขั้นที่ ${n}: <code>${CALLS[ev.b.t]}${py ? '()' : '();'}</code> = ${TH[ev.b.t]}`;
+    }
+    // wait between steps: a timer, or (step mode) until the student presses a button
+    const pace = () => (st.stepping ? new Promise((r) => { st.stepResolve = r; }) : sleep(delay()));
+    function stopRun() {
+      st.stepping = false;
+      $('#pzStepBar').hidden = true;
+      mark(null);
+      if (st.mode === 'type') showCodeView(false);
+      setBusy(false);
+      showMap(0);
+      say('หยุดแล้ว แก้โปรแกรม แล้วลองใหม่ได้เลย', 'think');
+    }
+
+    async function run(step) {
       if (st.running) return;
       if (st.mode === 'type') {
         const res = parseCode(textArea().value, lang());
@@ -784,19 +822,28 @@ window.Puzzle = (() => {
       clearResult();
       root.querySelectorAll('.pz-node.bad').forEach((n) => n.classList.remove('bad'));
       setBusy(true);
+      st.stepping = !!step;
+      st.abort = false;
+      $('#pzStepBar').hidden = !step;
       if (st.mode === 'type') showCodeView(true);
-      say('กำลังทำตามโปรแกรม... ดูบรรทัดสีเหลือง 👀', 'think');
+      say(step ? '👣 โหมดทีละขั้น: กด ▶ ขั้นต่อไป เพื่อทำทีละบรรทัด' : 'กำลังทำตามโปรแกรม... ดูบรรทัดสีเหลือง 👀', 'think');
+      if (step) $('#pzNextStep').focus();
+      let stepNo = 0;
       for (let m = 0; m < maps.length; m++) {
         showMap(m);
         const w = makeWorld(maps[m]);
         let last = null;
-        await sleep(delay());
+        if (!st.stepping) await sleep(delay());
         for (const ev of exec(st.program, w)) {
           if (!alive()) return;
+          if (st.abort) { stopRun(); return; }
           last = ev.b;
           mark(ev.b, 'now');
           drawBoard(w, m);
-          await sleep(delay());
+          if (st.stepping) say(explain(ev, ++stepNo), 'think');
+          await pace();
+          if (!alive()) return;
+          if (st.abort) { stopRun(); return; }
         }
         if (!alive()) return;
         const res = outcome(w);

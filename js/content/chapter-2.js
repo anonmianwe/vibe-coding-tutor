@@ -18,5 +18,8 @@ CONTENT.CHAPTERS.push({
     { title: "เพชรสองชั้น", desc: "เพชรอยู่คนละแถว เก็บให้ครบก่อนถึงธง",
       map: ["S*.", "#*#", "..G"], blocks: ["move", "left", "right", "pick"], solution: "M P R M P M L M", best: 8,
       hint: "เก็บเพชรเม็ดแรก แล้ว turn_right เพื่อลงไปหาเม็ดที่สอง" }
-  ]
+  ],
+  challenge: { title: "เพชรสามมุม", desc: "เพชร 3 เม็ดอยู่คนละมุม วางแผนเส้นทางให้ดี",
+    map: ["S*.", "..*", "*.G"], blocks: ["move", "left", "right", "pick"], solution: "M P M R M P R M M L M P L M M", best: 15,
+    hint: "เก็บเม็ดบน → เม็ดขวา → เดินไปทางซ้ายสุด แล้วลงเก็บเม็ดล่าง ค่อยไปธง" }
 });

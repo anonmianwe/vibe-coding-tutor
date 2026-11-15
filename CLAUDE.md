@@ -19,7 +19,9 @@ Changed again on 2026-11-15 after the user tested the Puzzle + Boss version ("th
 - **18 levels in 6 chapters:** sequence (incl. flowcharts), variables (`gems`), loops, if/else, linear search (one program for many maps), debugging (buggy start programs). Levels unlock in order.
 - **No reading cards and no boss.** The first level of each new idea has a short tip: text plus an example in the chosen language plus a syntax note for that language. Hard-word pop-ups, simple Thai, English and read aloud stay.
 - **Tap first, type later:** tap mode shows every block as a real code line. Typing mode unlocks after chapter 1, with real Python/C parsers for a small subset and Thai error messages with line numbers.
-- Stars (shortest program), XP and levels (300 each), 8 badges. Hints after failed runs; a solution after 2 fails.
+- Stars (shortest program), XP and levels (300 each), 9 badges. Hints after failed runs; a solution after 2 fails.
+- **Star rewards** (milestones, stars are never spent): step mode at 5 ⭐, Bit colors (8/15/22/30/40 ⭐), and one challenge level per chapter (unlocks at 2 stars per level on average; never blocks the main path). Help and accessibility always stay free.
+- **Planned, after TTS:** a teacher's create mode (the user's idea; discuss with the user first).
 - Removed: lesson cards, the Bug Boss, the 10-lesson track. Competitive mode: skipped.
 
 ## Reference course

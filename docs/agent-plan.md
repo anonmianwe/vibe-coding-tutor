@@ -15,14 +15,15 @@ Last updated: 2026-11-15 (the qualifying deadline). Read `CLAUDE.md` first; it h
   - 18 levels in 6 chapters: sequence, variables, loops, if/else, linear search, debugging.
   - The first level of each new idea has a short tip with code in the chosen language and a syntax note.
   - Tap mode shows blocks as real code. Typing mode unlocks after chapter 1.
-- **Test:** `tests/play-test.html` has 167 checks, all passing. It covers:
+- **Star rewards (added after the user's request):** step mode (5 ⭐), Bit colors, and 6 challenge levels (`challenge` in each chapter file, route `#/challenge/<chapter index>`).
+- **Test:** `tests/play-test.html` has 216 checks, all passing. It covers:
   - every solution and its `best` count
   - the buggy start programs really failing
   - a Python and C round-trip of every solution
   - tip examples parsing
   - parser error messages
   - all 18 levels played on screen, including typed code and a language switch mid-level
-- **Nothing is committed yet.** Don't commit or push unless the user asks.
+- **Public repo:** https://github.com/anonmianwe/vibe-coding-tutor, live at https://anonmianwe.github.io/vibe-coding-tutor/. A push to `main` updates the live site within about a minute, so commit and push only when the user asks. Commits use the GitHub noreply email (set in this repo's git config). The organizers' rules PDF is in `.gitignore` and must stay private.
 - **Team:** the user tests the app. Their partner writes the proposal, slides and demo video.
 
 ## Decisions the user made (don't reopen without asking)
@@ -32,6 +33,7 @@ Last updated: 2026-11-15 (the qualifying deadline). Read `CLAUDE.md` first; it h
 - Keep: short tips, stars/XP/badges, hard-word pop-ups.
 - Competitive mode: skipped.
 - TTS audio: **don't start** until the user says the gameplay is finished.
+- **Teacher's create mode:** the user's idea, to discuss **after TTS**. Don't build it before talking to the user.
 
 ## Files
 | File | What it does |
@@ -44,7 +46,7 @@ Last updated: 2026-11-15 (the qualifying deadline). Read `CLAUDE.md` first; it h
 The game's language subset: `move turn_left turn_right pick_gem`, `for` with a fixed count, `if wall_ahead()` / `if gem_here()` with optional `else`. No `while`, no variables of the student's own. The parsers give a friendly message for those.
 
 ## Ideas for next steps (ask the user first)
-1. More levels, especially harder ones per chapter, and challenge levels.
+1. More levels, especially harder ones per chapter.
 2. `while` loops (for example `while not at_flag():`): the parsers, `toCode`, a block, and a chapter.
 3. Puzzles for lists, sorting and binary search: these need new world features (crates with numbers).
 4. Polish: show the level on phones (the level chip is hidden under 420px), and keyboard shortcuts.

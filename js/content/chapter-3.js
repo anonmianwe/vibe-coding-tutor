@@ -31,5 +31,19 @@ CONTENT.CHAPTERS.push({
     { title: "เก็บเพชรเป็นจังหวะ", desc: "เพชรวางห่างกันเท่า ๆ กัน ใช้ลูปเก็บให้ครบ",
       map: ["S*.*.*G"], blocks: ["move", "left", "right", "pick", "repeat"], solution: "3{M P M}", best: 4,
       hint: "หนึ่งรอบคือ move, pick_gem, move ทำซ้ำ 3 รอบ" }
-  ]
+  ],
+  challenge: { title: "ลูปซ้อนลูป", desc: "บันไดขั้นใหญ่ แต่ละขั้นเดินตรง 3 ช่อง ใช้ลูปซ้อนในลูปให้สั้นที่สุด",
+    map: ["S...###", "###.###", "###.###", "###....", "######.", "######.", "######G"],
+    blocks: ["move", "left", "right", "repeat"], solution: "2{3{M} R 3{M} L}", best: 7,
+    hint: "หนึ่งขั้นบันได = เดิน 3 หันขวา เดิน 3 หันซ้าย ใช้ลูป 3 รอบแทน move ซ้ำ แล้วครอบทั้งหมดด้วยลูป 2 รอบ",
+    tip: {
+      text: "ลูปซ้อนลูป (nested loop) คือ ลูปที่อยู่ข้างในลูปอีกที ลูปข้างในทำครบทุกรอบ ก่อนที่ลูปข้างนอกจะขึ้นรอบใหม่ ลูปข้างในใช้ตัวนับคนละตัว (j)",
+      simple: "ลูปในลูป: ข้างในทำครบก่อน แล้วข้างนอกค่อยวนต่อ",
+      en: "A nested loop is a loop inside another loop. The inner loop finishes all its rounds before the outer loop starts its next round. It uses a different counter (j).",
+      code: { python: "for i in range(2):\n    for j in range(3):\n        move()\n    turn_right()", c: "for (int i = 0; i < 2; i++) {\n    for (int j = 0; j < 3; j++) {\n        move();\n    }\n    turn_right();\n}" },
+      notes: {
+        python: "ลูปข้างในต้องย่อหน้าลึกกว่าลูปข้างนอก คำสั่งในลูปข้างในจึงย่อหน้า 8 ช่อง",
+        c: "ลูปข้างในอยู่ใน { } ของลูปข้างนอก ใช้ตัวแปรนับคนละชื่อ (i กับ j) เพื่อไม่ให้ตีกัน"
+      }
+    } }
 });

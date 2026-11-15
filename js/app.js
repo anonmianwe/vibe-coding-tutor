@@ -467,6 +467,10 @@
       </div>
       ${rewardsHtml()}
       <ol class="chapters">${chapters}</ol>
+      <a class="teach-card join-card-link" href="#/join">
+        <span class="teach-icon" aria-hidden="true">🙋</span>
+        <span><b>เข้าห้องเรียน</b><br><span class="note">มีรหัสห้องจากคุณครู? ใส่รหัสและชื่อเล่น แล้วเล่นไปพร้อมเพื่อน ๆ</span></span>
+      </a>
       <a class="teach-card" href="#/teach">
         <span class="teach-icon" aria-hidden="true">🏫</span>
         <span><b>สำหรับคุณครู: สร้างชุดด่านเอง</b><br><span class="note">วาดแผนที่ เลือกคำสั่ง ทดสอบ แล้วแชร์ให้นักเรียนด้วยลิงก์หรือ QR</span></span>
@@ -624,9 +628,10 @@
     currentPuzzle = null;
     const [screen, n, ...rest] = location.hash.replace(/^#\/?/, '').split('/');
     const i = parseInt(n, 10);
-    if (!settings.lang && (screen === 'pack' || screen === 'teach')) afterLang = location.hash; // come back here after choosing
+    if (!settings.lang && ['pack', 'teach', 'room', 'join'].includes(screen)) afterLang = location.hash; // come back here after choosing
     if (!settings.lang || screen === 'start') renderStart();
     else if (window.Teacher.route(screen, [n, ...rest])) { /* teacher editor, or a pack shared by link */ }
+    else if (window.Room.route(screen, [n, ...rest])) { /* live classroom: teacher's room, or a student joining */ }
     else if (screen === 'level' && LEVELS[i] && isUnlocked(i)) renderLevel(LEVELS[i], i);
     else if (screen === 'challenge' && CHALLENGES.find((c) => c.ci === i && challengeOpen(c))) renderLevel(CHALLENGES.find((c) => c.ci === i), null);
     else renderHome();
@@ -638,10 +643,12 @@
   }
 
   // ---------- Start ----------
-  window.Teacher.init({
+  const shared = {
     app, esc, toast, go, settings, mascot, MASCOT, stars, mountLevel,
     progress: () => progress, saveProgress, hash: audioKey
-  });
+  };
+  window.Teacher.init(shared);
+  window.Room.init(shared);
   $('#brandMascot').innerHTML = MASCOT;
   initSettings();
   applySettings();

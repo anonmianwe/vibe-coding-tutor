@@ -1,0 +1,94 @@
+<!doctype html>
+<!-- Live classroom test (needs internet: PeerJS's public server connects the browsers).
+     A teacher and two students in one window: open a room, join, play, and check the teacher's live list.
+     Run a local server from the repo root (python3 -m http.server 8000), open http://localhost:8000/tests/room-test.html
+     and read the RESULT line. It clears this site's saved progress and settings. -->
+<meta charset="utf-8"><title>room test</title>
+<style>iframe{width:400px;height:700px;border:1px solid #999}</style>
+<body><pre id="out">running…</pre>
+<iframe id="t"></iframe><iframe id="s1"></iframe><iframe id="s2"></iframe>
+<script>
+const log = [];
+const ok = (c, m) => log.push((c ? 'PASS ' : 'FAIL ') + m);
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+async function until(fn, ms = 20000) { const t = Date.now(); while (Date.now() - t < ms) { try { const v = fn(); if (v) return v; } catch (e) { /* not ready */ } await wait(50); } return null; }
+const open = async (id, hash) => {
+  const f = document.getElementById(id);
+  f.src = '../index.html' + hash;
+  await until(() => f.contentWindow.Room && f.contentDocument.querySelector('#app .screen'));
+  const d = f.contentDocument;
+  return { w: f.contentWindow, d, $: (s) => d.querySelector(s), $$: (s) => [...d.querySelectorAll(s)] };
+};
+
+(async () => {
+  localStorage.clear();
+  sessionStorage.clear();
+  localStorage.setItem('vct-settings', JSON.stringify({ lang: 'python', motion: false }));
+
+  // the teacher opens a room for a 2-level pack
+  let T = await open('t', '#/');
+  T.w.PUZZLE_DELAY = 0;
+  const code = await T.w.Teacher.encodePack({ title: 'ห้องทดสอบ', levels: [
+    { title: 'ตรงไป', desc: '', hint: '', grid: ['S..G', '....'], blocks: ['move', 'left', 'right'], solution: 'M M M', best: 3 },
+    { title: 'ยาวขึ้น', desc: '', hint: '', grid: ['S...G', '.....'], blocks: ['move', 'left', 'right', 'repeat'], solution: '4{M}', best: 2 }
+  ] });
+  T.w.location.hash = '#/room/' + code;
+  const roomCode = await until(() => /^\d{6}$/.test(T.$('.room-code').textContent) && T.$('.room-code').textContent, 25000);
+  ok(roomCode, 'teacher room opens with a 6-digit code: ' + roomCode + (T.$('.pz-error') ? ' ERROR ' + T.$('.pz-error').textContent : ''));
+  if (!roomCode) throw new Error('room did not open (no internet, or the PeerJS server is down?)');
+  ok(T.$('.qr-box svg'), 'room shows a QR code to join');
+  ok(T.$('#roomPlayers').textContent.includes('ยังไม่มีนักเรียน'), 'player list starts empty');
+
+  // student 1 joins with a nickname
+  const S1 = await open('s1', '#/join/' + roomCode);
+  S1.w.PUZZLE_DELAY = 0;
+  ok(S1.$('#joinRoom').value === roomCode, 'join link fills in the room code');
+  ok(S1.$('.join-card').textContent.includes('ชื่อเล่น'), 'join screen asks for a nickname and warns not to use a real name');
+  S1.$('#joinName').value = 'มะม่วง';
+  S1.$('#joinGo').click();
+  ok(await until(() => S1.$('.pack') && S1.$('.room-badge')), 'student 1 joins and lands on the pack, with a room badge');
+  ok(await until(() => T.$$('.room-player').some((p) => p.textContent.includes('มะม่วง'))), 'teacher sees มะม่วง in the list');
+
+  // student 2 uses the same nickname
+  const S2 = await open('s2', '#/join/' + roomCode);
+  S2.$('#joinName').value = 'มะม่วง';
+  S2.$('#joinGo').click();
+  ok(await until(() => T.$$('.room-player').some((p) => p.textContent.includes('มะม่วง 2'))), 'a repeated nickname becomes "มะม่วง 2"');
+
+  // student 1 solves level 1: the teacher's list updates live
+  S1.$('.pack a.lvl').click();
+  await until(() => S1.$('.puzzle'));
+  for (let i = 0; i < 3; i++) S1.$('[data-add="move"]').click();
+  S1.$('#pzGo').click();
+  ok(await until(() => S1.$('#pzResult .pz-win')), 'student 1 solves level 1');
+  ok(await until(() => T.$$('.room-player')[0].textContent.includes('มะม่วง') && T.$$('.room-player')[0].textContent.includes('⭐ 3')), 'teacher list shows ⭐ 3 for มะม่วง, ranked first');
+  S1.$('#pzNext').click();
+  ok(await until(() => T.$$('.room-player')[0].textContent.includes('ด่าน 2/2')), 'teacher sees มะม่วง moved on to level 2');
+
+  // student 2 leaves (closes the page)
+  document.getElementById('s2').src = 'about:blank';
+  ok(await until(() => T.$$('.room-player.off').length === 1), 'a student who leaves shows as offline');
+
+  // a wrong room code
+  const S3 = await open('s2', '#/join/000000');
+  S3.$('#joinName').value = 'ส้ม';
+  S3.$('#joinGo').click();
+  ok(await until(() => !S3.$('#joinError').hidden && S3.$('#joinError').textContent.includes('ไม่พบห้อง')), 'a wrong room code says the room was not found');
+
+  // closing the room
+  T.$('#roomClose').click();
+  ok(await until(() => T.w.location.hash === '#/teach' && !T.w.Room.isHosting()), 'teacher can close the room');
+  ok(!localStorage.getItem('vct3-progress') || !localStorage.getItem('vct3-progress').includes('มะม่วง'), 'nicknames are not saved anywhere');
+
+  const fails = log.filter((l) => l.startsWith('FAIL')).length;
+  done(`RESULT ${log.length - fails} passed, ${fails} failed\n` + log.join('\n'));
+})().catch((e) => done('RESULT CRASH ' + e.message + '\n' + log.join('\n')));
+
+// Show the result. For headless runs, ?report=<port> also posts it to a local listener
+// (headless "virtual time" can't wait for real network connections).
+function done(text) {
+  document.getElementById('out').textContent = text;
+  const port = new URLSearchParams(location.search).get('report');
+  if (port) fetch(`http://localhost:${port}/`, { method: 'POST', mode: 'no-cors', body: text });
+}
+</script>

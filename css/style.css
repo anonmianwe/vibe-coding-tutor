@@ -508,6 +508,25 @@ a.lvl:hover { border-color: var(--primary); }
 .qr-box svg { display: block; width: 100%; height: auto; }
 .pack .chapter { margin-bottom: 1rem; }
 
+/* ---------- Live classroom ---------- */
+.room-card { text-align: center; background: var(--surface); border: var(--bw) solid var(--accent); border-radius: var(--radius); padding: 1rem; }
+.room-label { margin: 0; font-weight: 700; color: var(--muted); }
+.room-code { margin: 0; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 3rem; font-weight: 700; letter-spacing: .15em; line-height: 1.2; }
+.room-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .4rem; }
+.room-player {
+  display: flex; align-items: center; gap: .6rem; padding: .5rem .8rem;
+  background: var(--surface); border: var(--bw) solid var(--border); border-radius: 14px;
+}
+.room-player.off { opacity: .55; }
+.room-rank { width: 2rem; text-align: center; font-weight: 700; }
+.room-name { flex: 1; font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+.room-at, .room-stars { font-size: .85rem; white-space: nowrap; }
+.room-fallback { margin: 1rem 0; padding: .6rem 1rem; background: var(--surface); border: var(--bw) solid var(--border); border-radius: var(--radius); }
+.room-fallback summary { cursor: pointer; font-weight: 700; }
+.room-badge { display: inline-block; margin: 0 0 .6rem; padding: .1rem .8rem; border-radius: 999px; background: var(--surface); border: var(--bw) solid var(--ok); font-weight: 700; font-size: .85rem; }
+.join-card { background: var(--surface); border: var(--bw) solid var(--border); border-radius: var(--radius); padding: 1rem; }
+#joinRoom { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 1.6rem; letter-spacing: .2em; }
+
 /* ---------- Dialogs ---------- */
 .dlg {
   width: min(32rem, calc(100vw - 2rem)); max-height: calc(100vh - 2rem);

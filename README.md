@@ -37,6 +37,12 @@ Entry for the KMUTNB ComEdu Open House 2027 Vibe Coding Challenge, Topic 4: ห�
   - Share as a **link or QR code**. The whole pack is compressed into the link (`#/pack/<code>`), so nothing is stored online. A 2-level pack is about 270 characters.
   - Students open the link and play the pack in order, in their chosen language. Their stars stay in their own browser. Broken or edited links are rejected.
   - Teacher-written text has no pre-made audio, so the browser's Thai voice reads it, if the device has one.
+- **🏫 Live classroom** (like Blooket or Quizizz, but with no server or accounts):
+  - From the share box, the teacher opens a room and gets a **6-digit room code and a QR code**.
+  - Students tap "🙋 เข้าห้องเรียน" (join a classroom) or scan the QR, then type a **nickname**. The screen tells them not to use their real name.
+  - The teacher's screen shows a **live player list**: rank, nickname, current level, stars, and online or offline.
+  - It runs **peer-to-peer (WebRTC, PeerJS)**. The teacher's browser is the host, and PeerJS's free public server only introduces the browsers. There is no API key and no database. Nicknames live only in the teacher's open tab and are never saved.
+  - If a network blocks WebRTC (some school Wi-Fi does), students can still play the same pack from its link, just without the live list.
 - **Help:** a hint after every failed run, and a solution button after 2 fails, so no one gets stuck.
 - **Accessibility:**
   - 🔊 Read aloud in Thai with **pre-made audio** (male voice, works on every device, with a speed setting). The browser's own voice is only a fallback
@@ -63,10 +69,13 @@ Comments (`#` in Python, `//` and `/* */` in C) are allowed.
 | `js/content/chapter-1.js` … `chapter-6.js` | One file per chapter: levels, a challenge level and tips. **`chapter-1.js` explains the format.** |
 | `js/puzzle.js` | The game engine: grid, running programs, code in Python and C, the parsers for typed code, the editor |
 | `js/teacher.js` | Teacher mode: level-pack editor, test runs, link/QR sharing, and playing a shared pack |
+| `js/room.js` | Live classroom: the teacher's room and player list, and students joining with a nickname |
+| `js/vendor/peerjs.min.js` | PeerJS 1.5.4 (MIT), copied into the repo |
 | `js/vendor/qrcode.min.js` | QR code library (qrcode-generator 1.4.4, MIT), copied into the repo so it works without internet access to a CDN |
 | `js/app.js` | Screens and routes (language picker, map, level), settings, read aloud, saving, stars, XP and badges |
 | `audio/` | Pre-made voice files (mp3) and `manifest.js` |
 | `tools/speech-list.html`, `tools/make_audio.py` | List every spoken sentence, and make the missing audio files |
+| `tests/room-test.html` | Live classroom test with a real teacher and students (needs internet) |
 | `tests/play-test.html` | Automated test: checks every level and challenge, the parsers, step mode and Bit colors, and plays all 24 levels on screen |
 
 ## Read aloud (pre-made audio)
@@ -92,11 +101,13 @@ Then open http://localhost:8000.
 
 ## Test
 With the server running, open http://localhost:8000/tests/play-test.html and read the RESULT line. All checks must pass.
+The live classroom has its own test, http://localhost:8000/tests/room-test.html, which needs internet access.
 
 ## Deploy (GitHub Pages)
 Push to GitHub, then go to Settings → Pages → Deploy from branch → `main` / root.
 
 ## Credits
 Some activity ideas come from [CS Unplugged](https://classic.csunplugged.org/) and [CS50](https://cs50.harvard.edu/x/) (both CC BY-NC-SA 4.0). All text in the app is written by the team.
+Live classroom: [PeerJS](https://github.com/peers/peerjs) (MIT License).
 QR codes: [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) by Kazuhiko Arase (MIT License).
 All names and examples are made up. There is no real student data.

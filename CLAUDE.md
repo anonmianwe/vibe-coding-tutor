@@ -22,7 +22,7 @@ Changed again on 2026-11-15 after the user tested the Puzzle + Boss version ("th
 - Stars (shortest program), XP and levels (300 each), 9 badges. Hints after failed runs; a solution after 2 fails.
 - **Star rewards** (milestones, stars are never spent): step mode at 5 ⭐, Bit colors (8/15/22/30/40 ⭐), and one challenge level per chapter (unlocks at 2 stars per level on average; never blocks the main path). Help and accessibility always stay free.
 - **Teacher mode, step 1 (built):** a level-pack editor (`js/teacher.js`). The teacher draws maps, picks blocks, and must solve each level (that sets the solution and 3-star target). The pack is shared as a link/QR with everything compressed into the link; no server.
-- **Teacher mode, step 2 (next):** a live classroom room over WebRTC (PeerJS public broker, no API key). Students join with a room code and a nickname, and the teacher sees a live player list (like Blooket/Quizizz). Nicknames only, kept in the teacher's open tab. The link/QR pack stays as the fallback if the network blocks WebRTC.
+- **Teacher mode, step 2 (built):** a live classroom room over WebRTC (PeerJS public broker, no API key). Students join with a room code and a nickname, and the teacher sees a live player list (like Blooket/Quizizz). Nicknames only, kept in the teacher's open tab. The link/QR pack stays as the fallback if the network blocks WebRTC.
 - Removed: lesson cards, the Bug Boss, the 10-lesson track. Competitive mode: skipped.
 
 ## Reference course

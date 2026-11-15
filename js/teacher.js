@@ -246,6 +246,7 @@ window.Teacher = (() => {
         <button type="button" class="btn big primary" id="shareCopy">📋 คัดลอกลิงก์</button>
         <a class="btn big" href="${api.esc(url)}" target="_blank" rel="noopener">👀 เปิดดูแบบนักเรียน</a>
       </div>
+      <a class="btn big primary wide" href="#/room/${code}" id="shareRoom">🏫 เปิดห้องเรียนสด (เห็นรายชื่อนักเรียนแบบสด ๆ)</a>
       <div class="qr-box" id="shareQr">${qr}</div>
       <p class="note">${url.length > 900 ? '⚠️ ลิงก์ค่อนข้างยาว QR จะแน่น ถ้าสแกนยาก ให้แสดง QR ให้ใหญ่เต็มจอ หรือลดข้อความลง' : 'ให้นักเรียนสแกน QR หรือส่งลิงก์ทาง LINE / Google Classroom'} · ลิงก์ยาว ${url.length} ตัวอักษร</p>`;
     out.querySelector('#shareCopy').addEventListener('click', async () => {
@@ -309,6 +310,7 @@ window.Teacher = (() => {
       const done = pack.levels.filter((_, i) => got[i]).length;
       api.app.innerHTML = `<section class="screen pack">
         <div class="hero">${api.mascot('wave')}<div class="bubble"><p>คุณครูส่งชุดด่านมาให้! เขียนโค้ดพาผมผ่านให้ครบทุกด่านนะ</p></div></div>
+        ${window.Room.badge(code)}
         <article class="chapter"><h1 class="chapter-title">📦 ${api.esc(pack.title)} <span class="chapter-count">${done}/${pack.levels.length}</span></h1>
           <ol class="lvl-grid">${tiles}</ol></article>
         <p class="note">ชุดด่านนี้มาจากลิงก์ของคุณครู ดาวที่ได้เก็บไว้ในเบราว์เซอร์นี้เท่านั้น</p>
@@ -320,9 +322,10 @@ window.Teacher = (() => {
     withPack(code, (pack) => {
       const got = packStars(code);
       if (!pack.levels[i] || (i > 0 && !got[i - 1])) { api.go(`#/pack/${code}`); return; }
+      window.Room.report(code, { type: 'at', level: i });
       api.mountLevel({
         def: pack.levels[i],
-        head: `<div class="screen-head"><a href="#/pack/${code}" class="btn small ghost">← ชุดด่าน</a><h1>📦 ${api.esc(pack.title)} · ด่าน ${i + 1}/${pack.levels.length}</h1></div>`,
+        head: `<div class="screen-head"><a href="#/pack/${code}" class="btn small ghost">← ชุดด่าน</a><h1>📦 ${api.esc(pack.title)} · ด่าน ${i + 1}/${pack.levels.length}</h1></div>${window.Room.badge(code)}`,
         finish(stars) {
           const p = api.progress();
           p.packs = p.packs || {};
@@ -330,6 +333,7 @@ window.Teacher = (() => {
           arr[i] = Math.max(arr[i] || 0, stars);
           p.packs[packId(code)] = arr;
           api.saveProgress();
+          window.Room.report(code, { type: 'progress', level: i, stars: arr[i] });
           return i + 1 < pack.levels.length
             ? { href: `#/pack/${code}/${i + 1}`, label: 'ด่านต่อไป ▶' }
             : { href: `#/pack/${code}`, label: '🎉 ครบทุกด่านแล้ว! กลับไปดูชุดด่าน' };

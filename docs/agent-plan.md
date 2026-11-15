@@ -17,7 +17,7 @@ Last updated: 2026-11-15 (the qualifying deadline). Read `CLAUDE.md` first; it h
   - Tap mode shows blocks as real code. Typing mode unlocks after chapter 1.
 - **Star rewards (added after the user's request):** step mode (5 ⭐), Bit colors, and 6 challenge levels (`challenge` in each chapter file, route `#/challenge/<chapter index>`).
 - **Read aloud:** 211 pre-made mp3 files in `audio/` (see README). `speak()` takes a sentence or a list of sentences; each is looked up by `audioKey(spoken(text))`. Keep spoken text free of changing numbers so every piece can have a file.
-- **Test:** `tests/play-test.html` has 243 checks, all passing (incl. the teacher editor, sharing, broken links and playing a pack). It covers:
+- **Test:** `tests/play-test.html` has 243 checks, all passing (incl. the teacher editor, sharing, broken links and playing a pack). `tests/room-test.html` has 15 live-room checks (needs internet). Headless Chrome's `--virtual-time-budget` breaks real network waits, so run it in real time with `?report=<port>` and a small local listener that receives the result. It covers:
   - every solution and its `best` count
   - the buggy start programs really failing
   - a Python and C round-trip of every solution
@@ -34,7 +34,7 @@ Last updated: 2026-11-15 (the qualifying deadline). Read `CLAUDE.md` first; it h
 - Keep: short tips, stars/XP/badges, hard-word pop-ups.
 - Competitive mode: skipped.
 - TTS audio: **done** (edge-tts, male voice th-TH-NiwatNeural, chosen by the user). After changing any spoken text, regenerate the audio (README → Read aloud); the test fails if a sentence has no file.
-- **Teacher mode (agreed with the user):** step 1, the level-pack editor + link/QR, is **built** (`js/teacher.js`, routes `#/teach`, `#/teach/test/<n>`, `#/pack/<code>[/<n>]`). Step 2, **next**: a live room with PeerJS (no API key). Room code + QR, students join with a **nickname** (show a 'use a nickname, not your real name' note: PDPA), and the teacher sees a live player list with each student's level and stars. Names live only in the teacher's open tab. Keep the link pack as the fallback, and tell the user about the risks (school Wi-Fi can block WebRTC; it depends on the free PeerJS server; the demo needs 2 devices).
+- **Teacher mode (agreed with the user):** step 1, the level-pack editor + link/QR, is **built** (`js/teacher.js`, routes `#/teach`, `#/teach/test/<n>`, `#/pack/<code>[/<n>]`). Step 2 is **built too** (`js/room.js`, routes `#/room/<packCode>` and `#/join[/<room>]`): a live room with PeerJS (no API key). Room code + QR, students join with a **nickname** (show a 'use a nickname, not your real name' note: PDPA), and the teacher sees a live player list with each student's level and stars. Names live only in the teacher's open tab. Keep the link pack as the fallback, and tell the user about the risks (school Wi-Fi can block WebRTC; it depends on the free PeerJS server; the demo needs 2 devices).
 
 ## Files
 | File | What it does |

@@ -5,7 +5,58 @@ Students learn algorithm basics and the syntax of a real language at the same ti
 It also works for students who struggle: slow readers, students with poor eyesight, and students who aren't fluent in Thai.
 Entry for the KMUTNB ComEdu Open House 2027 Vibe Coding Challenge, Topic 4: ห้องเรียนสนุกด้วยเกม.
 
-**Live app:** https://&lt;username&gt;.github.io/vibe-coding-tutor/ (fill in after enabling GitHub Pages)
+**Live app:** https://anonmianwe.github.io/vibe-coding-tutor/
+**Code:** https://github.com/anonmianwe/vibe-coding-tutor
+
+## For AI agents helping with the submission (read this first)
+This repo is a finished, working prototype. The team's second member writes the **project proposal (max 3 A4 pages), the slides (talk up to 10 minutes) and the demo video (max 3 minutes)**. If you are helping with those, use the facts below and **don't change the app code** unless the team asks.
+
+**Read these files, in this order:**
+1. `CLAUDE.md`: the competition rules, deadlines, topic, game design, and what to submit.
+2. This README: what the app does (sections below).
+3. `docs/AI-content-and-tools.md`: every tool used, everything AI made, the content review, and the team's checking list.
+4. `docs/AI-usage-log.md`: the AI usage log, which is a required deliverable worth 10 points (16 key prompts, problems and fixes).
+5. `docs/agent-plan.md`: technical handoff notes (only needed for code changes).
+
+The organizers' rules PDF is **not** in the repo (it's their document). `CLAUDE.md` summarizes it, and the rules are on page 4 of the PDF the team has locally.
+
+**Key facts to use (all true today):**
+- **Topic 4 "ห้องเรียนสนุกด้วยเกม"** (a fun classroom with games). The topic's first example idea is "เกมตอบคำถามแข่งกันในห้องพร้อมตารางคะแนน" (a class quiz battle with a scoreboard), which the live classroom matches. The accessibility features come from Topic 3 and are a strength.
+- **Problem:** beginners find programming dry and abstract, and many struggle (slow readers, poor eyesight, not fluent in Thai). **Idea:** learn real Python or C by programming a robot in a game, with short tips instead of long reading.
+- **Numbers:**
+  - 2 languages (Python, C)
+  - 6 chapters: sequence, variables, loops, if/else, linear search, debugging
+  - 18 levels + 6 challenge levels, and 12 short tips
+  - 211 pre-made audio files (male Thai voice)
+  - 9 badges
+  - teacher packs of up to 8 levels
+  - 243 + 15 automated test checks, all passing
+- **Learning path:** tap code blocks first (each block is a real line of code); typing real code unlocks after chapter 1, with Thai error messages and line numbers. Step mode runs one line at a time and explains it.
+- **For teachers:** make a level pack, test it, and share by link or QR code (no server). Or open a **live classroom**: students join with a room code and a nickname, and the teacher sees a live ranking.
+- **Rules it follows:**
+  - a public link (GitHub Pages)
+  - Thai UI
+  - no API keys or passwords in the code
+  - no real personal data (nicknames only, never saved)
+  - only free libraries (MIT licensed)
+  - AI-made audio listed in the AI log
+
+**Don't claim things that aren't true:**
+- There is **no AI inside the app** (no chatbot). AI was used to build it, which the rules allow.
+- The Python and C are a **small teaching subset** running in the game's own interpreter, not a real compiler.
+- The voice is **pre-generated** with edge-tts (Microsoft Edge text-to-speech); the app only plays mp3 files.
+- The live classroom needs **internet**, and some school networks block it; the pack link still works then.
+- The team has **not finished checking** all AI-made content yet (see the checklist in `docs/AI-content-and-tools.md`).
+
+**Demo tips (live demo is 5 minutes by screen share, final round on Nov 21):**
+- **Fresh browser:** first visit → choose a language → level 1 with a tip → tap blocks → run.
+- **Show the language switch:** ⚙ → C ⇄ Python, and the same program is redrawn.
+- **Typing mode:** make a deliberate mistake (missing `;` or `:`) to show the Thai error message.
+- **Step mode:** needs 5 ⭐. **Challenge levels:** need 2 ⭐ per level on average in a chapter. Prepare a browser that already has stars.
+- **Live classroom:** needs a second device (a phone) visible in the screen share. Have the pack link ready as a backup.
+- **Accessibility:** Aa (text size), ◐ (themes), 🔊 (read aloud), ✨ (simple Thai), EN (English).
+
+**Still to do for the submission:** the proposal, the slides, the demo video, the team's content check, and the "what we checked" column of the AI log. Submit at https://kmutnb.link/register-vibecode.
 
 ## How it plays
 - **First screen:** choose 🐍 Python or 🅲 C. Each option shows the same program in that language. You can switch anytime in ⚙; the program on screen is redrawn in the new language.

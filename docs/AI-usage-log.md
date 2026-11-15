@@ -7,6 +7,9 @@ It also requires listing any AI-made images, audio or icons.
 | Tool | What it was used for |
 |---|---|
 | Claude Code (Claude Opus 5.5) | Summarizing the rules, planning, researching the reference course, designing the UI, coding |
+| edge-tts (Microsoft Edge text-to-speech), voice th-TH-NiwatNeural | Making the 211 read-aloud audio files (AI voice) |
+
+The full list of tools, libraries and services, everything AI made, and the content review are in `docs/AI-content-and-tools.md`.
 
 ## Key prompts
 | # | Date | Prompt (summary) | What AI produced | What we checked or changed |
@@ -26,6 +29,7 @@ It also requires listing any AI-made images, audio or icons.
 | 13 | 2026-11-15 | "Should we render the voice ourselves or tune our own voice model?", then "use the male voice from edge-tts, we have no time left" | AI advised pre-rendering with an existing voice instead of tuning a model (time, data, consent). It made the app speak in fixed sentences, wrote tools to list every sentence and make one mp3 each with edge-tts (th-TH-NiwatNeural), and fixed how code words are said. 211 files; the test checks every sentence has a file (220 checks pass) | We chose edge-tts and the male voice. TODO: listen to the audio and report any word said wrong |
 | 14 | 2026-11-15 | Teacher's create mode: we chose link + QR sharing, level packs, a live player list "like Blooket or Quizizz", and the browser voice for teacher text. "Start with the editor" | AI explained that a Blooket-style list normally needs a server or a cloud database with an API key (not allowed), and proposed a peer-to-peer live room (PeerJS) with the link pack as a fallback. It built the editor first: draw maps, choose blocks, the teacher must solve each level, then a compressed link and QR code (no server). Students play the pack from the link. The test now has 243 checks, all passing | We agreed on the two-step plan. TODO: try making a pack and scanning the QR with a phone |
 | 15 | 2026-11-15 | "Okay it passes" (the editor), then step 2: the live classroom | AI built the live room with PeerJS: the teacher gets a room code and QR, students join with a nickname (with a note not to use their real name), and the teacher sees a live player list with level, stars and online status. No API key, no database; nicknames are never saved. A separate test runs a real teacher and two students (15 checks pass) | We decided on nicknames only, and on keeping the link pack as the fallback. TODO: try it with real phones on the school Wi-Fi before the final |
+| 16 | 2026-11-15 | "Check the AI content and tools, make a list and put it in the repo, and let my partner's agent know what we have in the README" | AI reviewed every tip and code note, found and fixed 3 statements that were too absolute (C semicolons, Python indentation twice) and softened 1 claim it could not verify, then remade those 3 audio files. It wrote `docs/AI-content-and-tools.md` (tools, everything AI made, review, team checklist), and a README section for the partner's AI agent (key facts, what not to claim, demo tips) | TODO: the team works through the checklist in `docs/AI-content-and-tools.md` |
 
 ## Problems and fixes
 | Problem | How it was fixed |
@@ -43,6 +47,8 @@ It also requires listing any AI-made images, audio or icons.
 | The computer had no pip, so edge-tts could not be installed | We installed python3-venv (`sudo apt install python3-venv`), and AI installed edge-tts in a temporary virtual environment |
 | The voice would read code symbols badly, or skip them (`_`, `;`, `{ }`, `#`) | A symbol on its own is now said by name (for example "เซมิโคลอน", "วงเล็บปีกกาเปิด"); inside code it is dropped (`move();` → "move") |
 | The live-room test failed in headless Chrome even though the PeerJS server was reachable | Headless "virtual time" fast-forwards the test's waits before real network replies arrive. The test now runs in real time and posts its result to a small local listener (`?report=<port>`) |
+| The AI content review found tips that taught something slightly wrong: "in C every statement ends with ;" (not true for for/if blocks) and "Python must indent 4 spaces" (4 is only the convention) | Reworded the 3 notes, remade their audio, and recorded the review in `docs/AI-content-and-tools.md` |
+| The README still had a placeholder instead of the real live link | Replaced it with https://anonmianwe.github.io/vibe-coding-tutor/ |
 
 ## AI-generated media (images, audio, icons)
 | File | Tool | Notes |

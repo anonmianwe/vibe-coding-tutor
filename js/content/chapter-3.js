@@ -11,7 +11,7 @@ CONTENT.CHAPTERS.push({
         en: "A loop repeats the same commands. Write them once and run them as many times as you like: shorter code that's easier to change.",
         code: { python: "for i in range(7):\n    move()", c: "for (int i = 0; i < 7; i++) {\n    move();\n}" },
         notes: {
-          python: "range(7) นับ 0, 1, ..., 6 รวม 7 รอบ หลัง for ต้องมี : และคำสั่งในลูปต้อง{ย่อหน้า}เข้าไป 4 ช่อง",
+          python: "range(7) นับ 0, 1, ..., 6 รวม 7 รอบ หลัง for ต้องมี : และคำสั่งในลูปต้อง{ย่อหน้า}เข้าไปเท่ากันทุกบรรทัด (นิยมใช้ 4 ช่องว่าง)",
           c: "for มี 3 ส่วน: เริ่ม i = 0; ทำต่อเมื่อ i < 7; และ i++ เพิ่ม i ทีละ 1 ทุกรอบ คำสั่งในลูปอยู่ใน { }"
         }
       } },

@@ -395,7 +395,7 @@
       <div class="lang-pick">
         <button type="button" class="lang-card" data-lang="python" aria-pressed="${settings.lang === 'python'}">
           <span class="lang-name">🐍 Python</span>
-          <span class="lang-desc">อ่านง่าย ใกล้ภาษาอังกฤษ ใช้การย่อหน้าแบ่งส่วนของโค้ด ใช้สอนในวิชาวิทยาการคำนวณ ม.ปลาย</span>
+          <span class="lang-desc">อ่านง่าย ใกล้ภาษาอังกฤษ ใช้การย่อหน้าแบ่งส่วนของโค้ด นิยมใช้สอนเขียนโปรแกรมในโรงเรียน</span>
           <pre class="code" lang="en">${esc(SAMPLE)}</pre>
         </button>
         <button type="button" class="lang-card" data-lang="c" aria-pressed="${settings.lang === 'c'}">

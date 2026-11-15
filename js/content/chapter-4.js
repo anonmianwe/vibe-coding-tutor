@@ -24,7 +24,7 @@ CONTENT.CHAPTERS.push({
         en: "A good program works in many situations. Memorizing the path only fits one map; letting Bit decide with a condition works on every similar map.",
         code: { python: "for i in range(11):\n    if wall_ahead():\n        turn_right()\n    else:\n        move()", c: "for (int i = 0; i < 11; i++) {\n    if (wall_ahead()) {\n        turn_right();\n    } else {\n        move();\n    }\n}" },
         notes: {
-          python: "if ที่อยู่ในลูป ต้องย่อหน้า 4 ช่อง และคำสั่งใน if ย่อหน้าอีก 4 ช่อง (รวม 8)",
+          python: "if ที่อยู่ในลูป ย่อหน้า 1 ระดับ และคำสั่งใน if ย่อหน้าเพิ่มอีก 1 ระดับ (ถ้าใช้ระดับละ 4 ช่อง ก็รวม 8 ช่อง)",
           c: "{ } ซ้อนกันได้ ทุก { ต้องมี } ปิดคู่กันเสมอ"
         }
       } },

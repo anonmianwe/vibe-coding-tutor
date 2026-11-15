@@ -17,6 +17,7 @@ This repo is a finished, working prototype. The team's second member writes the 
 3. `docs/AI-content-and-tools.md`: every tool used, everything AI made, the content review, and the team's checking list.
 4. `docs/AI-usage-log.md`: the AI usage log, which is a required deliverable worth 10 points (16 key prompts, problems and fixes).
 5. `docs/agent-plan.md`: technical handoff notes (only needed for code changes).
+6. `docs/demo-video-script.md`: the 3-minute demo video script (Thai narration, shot by shot, with prep steps).
 
 The organizers' rules PDF is **not** in the repo (it's their document). `CLAUDE.md` summarizes it, and the rules are on page 4 of the PDF the team has locally.
 

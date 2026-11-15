@@ -17,7 +17,7 @@ Last updated: 2026-11-15 (the qualifying deadline). Read `CLAUDE.md` first; it h
   - Tap mode shows blocks as real code. Typing mode unlocks after chapter 1.
 - **Star rewards (added after the user's request):** step mode (5 ⭐), Bit colors, and 6 challenge levels (`challenge` in each chapter file, route `#/challenge/<chapter index>`).
 - **Read aloud:** 211 pre-made mp3 files in `audio/` (see README). `speak()` takes a sentence or a list of sentences; each is looked up by `audioKey(spoken(text))`. Keep spoken text free of changing numbers so every piece can have a file.
-- **Test:** `tests/play-test.html` has 243 checks, all passing (incl. the teacher editor, sharing, broken links and playing a pack). `tests/room-test.html` has 15 live-room checks (needs internet). Headless Chrome's `--virtual-time-budget` breaks real network waits, so run it in real time with `?report=<port>` and a small local listener that receives the result. It covers:
+- **Test:** `tests/play-test.html` has 243 checks, all passing (incl. the teacher editor, sharing, broken links and playing a pack). `tests/room-test.html` has 22 live-room checks (needs internet), including points, the speed bonus and first-finisher places. Points are decided in the teacher's browser (`room.js`: `STAR_POINTS`, `SPEED_MAX`, `SPEED_WINDOW`, `FIRST_BONUS`); the student's device sends the time spent on a level. Headless Chrome's `--virtual-time-budget` breaks real network waits, so run it in real time with `?report=<port>` and a small local listener that receives the result. It covers:
   - every solution and its `best` count
   - the buggy start programs really failing
   - a Python and C round-trip of every solution

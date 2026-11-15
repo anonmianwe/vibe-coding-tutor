@@ -323,6 +323,7 @@ window.Teacher = (() => {
       const got = packStars(code);
       if (!pack.levels[i] || (i > 0 && !got[i - 1])) { api.go(`#/pack/${code}`); return; }
       window.Room.report(code, { type: 'at', level: i });
+      const openedAt = Date.now(); // for the live room's speed bonus
       api.mountLevel({
         def: pack.levels[i],
         head: `<div class="screen-head"><a href="#/pack/${code}" class="btn small ghost">← ชุดด่าน</a><h1>📦 ${api.esc(pack.title)} · ด่าน ${i + 1}/${pack.levels.length}</h1></div>${window.Room.badge(code)}`,
@@ -333,7 +334,7 @@ window.Teacher = (() => {
           arr[i] = Math.max(arr[i] || 0, stars);
           p.packs[packId(code)] = arr;
           api.saveProgress();
-          window.Room.report(code, { type: 'progress', level: i, stars: arr[i] });
+          window.Room.report(code, { type: 'progress', level: i, stars, ms: Date.now() - openedAt });
           return i + 1 < pack.levels.length
             ? { href: `#/pack/${code}/${i + 1}`, label: 'ด่านต่อไป ▶' }
             : { href: `#/pack/${code}`, label: '🎉 ครบทุกด่านแล้ว! กลับไปดูชุดด่าน' };

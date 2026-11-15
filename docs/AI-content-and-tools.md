@@ -26,7 +26,7 @@ Emoji (🤖 🏁 🪨 💎 and others) are the device's standard Unicode emoji, 
 
 | What | Where | How much | Already checked by AI / the test | The team must check |
 |---|---|---|---|---|
-| All program code (HTML, CSS, JavaScript) | `index.html`, `css/`, `js/` | about 3,200 lines | 243 automated checks (`tests/play-test.html`) + 15 live-room checks (`tests/room-test.html`) pass; screenshots in 3 themes at phone width | Both members can explain how it works (Q&A rule) |
+| All program code (HTML, CSS, JavaScript) | `index.html`, `css/`, `js/` | about 3,200 lines | 243 automated checks (`tests/play-test.html`) + 22 live-room checks (`tests/room-test.html`) pass; screenshots in 3 themes at phone width | Both members can explain how it works (Q&A rule) |
 | Level maps, solutions, hints | `js/content/chapter-1.js` … `chapter-6.js` | 18 levels + 6 challenge levels | The test runs every solution on every map, checks the 3-star target equals the solution length, and checks the buggy debug programs really fail | Levels are fair and not too hard for high school students; hints make sense |
 | Short tips (lesson text) | `tip` in the chapter files | 12 tips, each in normal Thai, simple Thai and English | Content review below; the test checks every tip example is valid Python and C (except the variables tip, which shows `gems = 0`, not a game command) | Thai is natural; facts are right; English translations match |
 | Code examples and syntax notes | `tip.code`, `tip.notes` | 12 × 2 languages | Content review below | Python and C facts are right |
@@ -66,6 +66,7 @@ Emoji (🤖 🏁 🪨 💎 and others) are the device's standard Unicode emoji, 
 - [ ] Play all 18 levels and 6 challenge levels: fair difficulty? hints helpful?
 - [ ] Try typing mistakes in both languages: are the error messages clear?
 - [ ] Listen to at least 20 audio files (or press 🔊 in the app) and list any word said wrong
-- [ ] Test the live classroom with real phones on the school's Wi-Fi
+- [x] Test the live classroom with a real phone: **done by the team on 2026-11-15**, and it works (PeerJS connected)
+- [ ] Test the live classroom on the **school's or venue's Wi-Fi** (still to do)
 - [ ] Both members can explain: how levels are checked, how the Python/C parsers work, how the pack link works (no server), and how the live room works (WebRTC)
 - [ ] Fill in the "What we checked or changed" column in `docs/AI-usage-log.md`

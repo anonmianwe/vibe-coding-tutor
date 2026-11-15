@@ -62,8 +62,24 @@ const open = async (id, hash) => {
   S1.$('#pzGo').click();
   ok(await until(() => S1.$('#pzResult .pz-win')), 'student 1 solves level 1');
   ok(await until(() => T.$$('.room-player')[0].textContent.includes('มะม่วง') && T.$$('.room-player')[0].textContent.includes('⭐ 3')), 'teacher list shows ⭐ 3 for มะม่วง, ranked first');
+  const pts = () => Number((T.$$('.room-player')[0].querySelector('.room-score').textContent.match(/\d+/) || [0])[0]);
+  ok(await until(() => pts() >= 400 && pts() <= 450), `points = 3 stars (300) + first-to-3-stars (100) + speed bonus (0–50): ${pts()}`);
+  ok(await until(() => T.$('#roomFirsts').textContent.includes('🥇 มะม่วง')), 'first-finishers board shows 🥇 มะม่วง for level 1');
+  ok(await until(() => S1.$('#toast').textContent.includes('คนที่ 1')), 'student 1 gets a popup for being first: ' + S1.$('#toast').textContent);
+  ok(T.$('#roomSpeed') && T.$('#roomSpeed').checked, 'the speed bonus switch is on by default');
   S1.$('#pzNext').click();
   ok(await until(() => T.$$('.room-player')[0].textContent.includes('ด่าน 2/2')), 'teacher sees มะม่วง moved on to level 2');
+
+  // student 2 solves level 1 too: second place
+  S2.w.PUZZLE_DELAY = 0;
+  await until(() => S2.$('.pack a.lvl'));
+  S2.$('.pack a.lvl').click();
+  await until(() => S2.$('.puzzle'));
+  for (let i = 0; i < 3; i++) S2.$('[data-add="move"]').click();
+  S2.$('#pzGo').click();
+  ok(await until(() => T.$('#roomFirsts').textContent.includes('🥈 มะม่วง 2')), 'the second student to get 3 stars is 🥈');
+  ok(await until(() => S2.$('#roomBadge') && /คะแนน · อันดับ 2\/2/.test(S2.$('#roomBadge').textContent)), 'student 2 sees own score and rank: ' + (S2.$('#roomBadge') || {}).textContent);
+  ok(await until(() => S1.$('#roomBadge') && /อันดับ 1\/2/.test(S1.$('#roomBadge').textContent)), 'student 1 sees rank 1 of 2: ' + (S1.$('#roomBadge') || {}).textContent);
 
   // student 2 leaves (closes the page)
   document.getElementById('s2').src = 'about:blank';

@@ -30,9 +30,9 @@ The organizers' rules PDF is **not** in the repo (it's their document). `CLAUDE.
   - 211 pre-made audio files (male Thai voice)
   - 9 badges
   - teacher packs of up to 8 levels
-  - 243 + 15 automated test checks, all passing
+  - 243 + 22 automated test checks, all passing
 - **Learning path:** tap code blocks first (each block is a real line of code); typing real code unlocks after chapter 1, with Thai error messages and line numbers. Step mode runs one line at a time and explains it.
-- **For teachers:** make a level pack, test it, and share by link or QR code (no server). Or open a **live classroom**: students join with a room code and a nickname, and the teacher sees a live ranking.
+- **For teachers:** make a level pack, test it, and share by link or QR code (no server). Or open a **live classroom**: students join with a room code and a nickname, and the teacher sees a live ranking by points (stars + speed bonus + first-to-3-stars bonus) and a first-finishers board for real-class rewards.
 - **Rules it follows:**
   - a public link (GitHub Pages)
   - Thai UI
@@ -91,7 +91,10 @@ The organizers' rules PDF is **not** in the repo (it's their document). `CLAUDE.
 - **🏫 Live classroom** (like Blooket or Quizizz, but with no server or accounts):
   - From the share box, the teacher opens a room and gets a **6-digit room code and a QR code**.
   - Students tap "🙋 เข้าห้องเรียน" (join a classroom) or scan the QR, then type a **nickname**. The screen tells them not to use their real name.
-  - The teacher's screen shows a **live player list**: rank, nickname, current level, stars, and online or offline.
+  - The teacher's screen shows a **live ranking by points**: rank, nickname, current level, stars, points, and online or offline.
+  - **Points:** 100 per star; a **speed bonus** of up to +50 that shrinks to 0 over 5 minutes after opening a level (the teacher can switch it off); and **+100 / +50 / +25** for the first three students to get 3 stars on a level.
+  - A **"🏅 ผู้ทำได้ก่อน" board** (first finishers) shows the 🥇🥈🥉 of each level, so the teacher knows whom to reward in the real class. Students get a popup when they place, and see their own points and rank.
+  - There is **no countdown clock** on students' screens; speed only adds a bonus, so slow readers still get full star points.
   - It runs **peer-to-peer (WebRTC, PeerJS)**. The teacher's browser is the host, and PeerJS's free public server only introduces the browsers. There is no API key and no database. Nicknames live only in the teacher's open tab and are never saved.
   - If a network blocks WebRTC (some school Wi-Fi does), students can still play the same pack from its link, just without the live list.
 - **Help:** a hint after every failed run, and a solution button after 2 fails, so no one gets stuck.

@@ -521,6 +521,9 @@ a.lvl:hover { border-color: var(--primary); }
 .room-rank { width: 2rem; text-align: center; font-weight: 700; }
 .room-name { flex: 1; font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
 .room-at, .room-stars { font-size: .85rem; white-space: nowrap; }
+.room-score { font-weight: 700; white-space: nowrap; color: var(--primary); }
+.room-firsts { margin: 0 0 1rem; padding-left: 1.2rem; display: grid; gap: .3rem; }
+@media (max-width: 480px) { .room-player { flex-wrap: wrap; } .room-name { flex-basis: 50%; } }
 .room-fallback { margin: 1rem 0; padding: .6rem 1rem; background: var(--surface); border: var(--bw) solid var(--border); border-radius: var(--radius); }
 .room-fallback summary { cursor: pointer; font-weight: 700; }
 .room-badge { display: inline-block; margin: 0 0 .6rem; padding: .1rem .8rem; border-radius: 999px; background: var(--surface); border: var(--bw) solid var(--ok); font-weight: 700; font-size: .85rem; }

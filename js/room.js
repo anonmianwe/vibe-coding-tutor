@@ -9,8 +9,14 @@
 // Screens:
 //   #/room/<packCode>   teacher: the room (code, QR, player list)
 //   #/join[/<room>]     student: enter the room code and a nickname
-// Messages (student → teacher): hello { name, stars } · at { level } · progress { level, stars }
-// Messages (teacher → student): welcome { pack, name } · full
+// Messages (student → teacher): hello { name } · at { level } · progress { level, stars, ms (time spent on the level) }
+// Messages (teacher → student): welcome { pack, name } · full · bonus { level, place, points } · score { score, rank, players }
+//
+// Points in the live room (the teacher's browser decides them):
+//   100 per star, the best try on each level counts
+//   + speed bonus up to 50, shrinking over 5 minutes from opening the level (the teacher can switch it off)
+//   + the first three students to get 3 stars on a level: +100, +50, +25
+// There is no countdown on the students' screens; speed only adds a bonus (no timers in learning).
 window.Room = (() => {
   'use strict';
 
@@ -18,6 +24,10 @@ window.Room = (() => {
   const PREFIX = 'nongbit-room-'; // PeerJS ids are global, so room codes get a prefix
   const MAX_PLAYERS = 60;
   const NAME_MAX = 20;
+  const STAR_POINTS = 100;
+  const SPEED_MAX = 50; // speed bonus for solving right after opening the level
+  const SPEED_WINDOW = 300; // seconds: after 5 minutes the speed bonus is 0
+  const FIRST_BONUS = [100, 50, 25]; // 1st, 2nd and 3rd to get 3 stars on a level
   let host = null; // the teacher's room (stays open while the app is open)
   let student = null; // this student's connection
 
@@ -27,7 +37,8 @@ window.Room = (() => {
   // ---------- Teacher: host a room ----------
   function openRoom(packCode, pack) {
     closeRoom();
-    host = { packCode, pack, code: null, peer: null, players: new Map(), error: null, tries: 0 };
+    host = { packCode, pack, code: null, peer: null, players: new Map(), error: null, tries: 0,
+      speed: true, firsts: pack.levels.map(() => []) }; // firsts[level] = students who got 3 stars, in order
     startPeer();
   }
   function startPeer() {
@@ -59,7 +70,7 @@ window.Room = (() => {
       let name = cleanName(msg.name) || 'นักเรียน';
       const taken = new Set([...h.players.values()].filter((x) => x !== p).map((x) => x.name));
       for (let n = 2; taken.has(name); n++) name = `${cleanName(msg.name).slice(0, NAME_MAX - 3)} ${n}`; // two students with the same nickname
-      p = Object.assign(p || { at: 0, stars: [] }, { name, conn, online: true, joined: Date.now() });
+      p = Object.assign(p || { at: 0, stars: [], best: [], bonus: 0 }, { name, conn, online: true, joined: Date.now() });
       if (Array.isArray(msg.stars)) p.stars = msg.stars.slice(0, h.pack.levels.length).map((x) => Math.min(3, Number(x) || 0));
       h.players.set(conn.peer, p);
       conn.send({ type: 'welcome', pack: h.packCode, name });
@@ -67,7 +78,23 @@ window.Room = (() => {
       p.at = Math.max(0, Math.min(h.pack.levels.length - 1, Number(msg.level) || 0));
     } else if (p && msg.type === 'progress') {
       const i = Number(msg.level);
-      if (i >= 0 && i < h.pack.levels.length) p.stars[i] = Math.max(p.stars[i] || 0, Math.min(3, Number(msg.stars) || 0));
+      const stars = Math.min(3, Number(msg.stars) || 0);
+      if (i >= 0 && i < h.pack.levels.length && stars > 0) {
+        p.stars[i] = Math.max(p.stars[i] || 0, stars);
+        // speed bonus: only for a fresh solve with a time (not for stars sent again after reconnecting)
+        const sec = Number(msg.ms) / 1000;
+        const speed = h.speed && sec >= 0 ? Math.round(SPEED_MAX * Math.max(0, 1 - sec / SPEED_WINDOW) * (stars / 3)) : 0;
+        p.best[i] = Math.max(p.best[i] || 0, stars * STAR_POINTS + speed);
+        // first to 3 stars on this level
+        const order = h.firsts[i];
+        if (stars === 3 && !order.includes(conn.peer) && order.length < FIRST_BONUS.length) {
+          order.push(conn.peer);
+          const points = FIRST_BONUS[order.length - 1];
+          p.bonus += points;
+          conn.send({ type: 'bonus', level: i, place: order.length, points });
+        }
+        sendScores(h);
+      }
     }
     drawPlayers();
   }
@@ -100,8 +127,12 @@ window.Room = (() => {
             <p class="note">ให้นักเรียนสแกน QR หรือเปิดเกม แล้วกด 🙋 เข้าห้องเรียน แล้วใส่รหัสห้อง</p>`
           : '<p>กำลังเปิดห้อง...</p>'}
       </article>
-      <h2 class="section-title">นักเรียนในห้อง <span id="roomCount"></span></h2>
+      <h2 class="section-title">อันดับในห้อง <span id="roomCount"></span></h2>
+      <p class="note">คะแนน: ดาวละ ${STAR_POINTS} · ⏱️ โบนัสความเร็วสูงสุด +${SPEED_MAX} (ลดลงจนหมดใน ${SPEED_WINDOW / 60} นาที) · คนแรกที่ได้ 3 ดาวในแต่ละด่าน +${FIRST_BONUS.join(' / +')}</p>
+      <label class="switch"><input type="checkbox" id="roomSpeed" ${host.speed ? 'checked' : ''}><span>⏱️ ให้โบนัสความเร็ว (ปิดได้ ถ้าอยากให้ทุกคนทำตามจังหวะตัวเอง)</span></label>
       <div id="roomPlayers"></div>
+      <h2 class="section-title">🏅 ผู้ทำได้ก่อน (ได้ 3 ดาวเป็นคนแรก)</h2>
+      <div id="roomFirsts"></div>
       <p class="note">🔒 ชื่อเล่นของนักเรียนอยู่บนหน้าจอนี้เท่านั้น ไม่ได้บันทึกไว้ที่ไหน ปิดห้องหรือปิดหน้านี้แล้วจะหายไป</p>
       <details class="card room-fallback"><summary>ถ้าเชื่อมต่อไม่ได้</summary>
         <p>เครือข่ายบางแห่งบล็อกการเชื่อมต่อแบบนี้ นักเรียนยังเล่นชุดด่านเดียวกันได้จากลิงก์นี้ (แต่จะไม่ขึ้นในรายชื่อ)</p>
@@ -110,25 +141,43 @@ window.Room = (() => {
     </section>`;
     const retry = api.app.querySelector('#roomRetry');
     if (retry) retry.addEventListener('click', () => { const { packCode, pack } = host; openRoom(packCode, pack); drawRoom(); });
+    api.app.querySelector('#roomSpeed').addEventListener('change', (e) => { host.speed = e.target.checked; api.toast(host.speed ? 'เปิดโบนัสความเร็วแล้ว' : 'ปิดโบนัสความเร็วแล้ว'); });
     api.app.querySelector('#roomClose').addEventListener('click', () => { closeRoom(); api.toast('ปิดห้องแล้ว'); api.go('#/teach'); });
     drawPlayers();
+  }
+  const scoreOf = (p) => p.best.reduce((a, b) => a + (b || 0), 0) + p.bonus;
+  function ranking(h) {
+    return [...h.players.entries()].map(([id, p]) => ({
+      id, p, score: scoreOf(p), total: p.stars.reduce((a, b) => a + (b || 0), 0), solved: p.stars.filter(Boolean).length
+    })).sort((a, b) => b.score - a.score || b.solved - a.solved || a.p.joined - b.p.joined);
+  }
+  // tell every student their own score and place
+  function sendScores(h) {
+    const list = ranking(h);
+    list.forEach(({ p, score }, k) => { if (p.online && p.conn && p.conn.open) p.conn.send({ type: 'score', score, rank: k + 1, players: list.length }); });
   }
   function drawPlayers() {
     const box = document.getElementById('roomPlayers');
     if (!host || !box) return;
     const n = host.pack.levels.length;
-    const list = [...host.players.values()].map((p) => ({
-      p, total: p.stars.reduce((a, b) => a + (b || 0), 0), solved: p.stars.filter(Boolean).length
-    })).sort((a, b) => b.total - a.total || b.solved - a.solved || a.p.joined - b.p.joined);
+    const list = ranking(host);
     document.getElementById('roomCount').textContent = `(${list.filter((x) => x.p.online).length} คนออนไลน์)`;
-    box.innerHTML = list.length ? `<ol class="room-list">${list.map(({ p, total, solved }, k) => `
+    box.innerHTML = list.length ? `<ol class="room-list">${list.map(({ p, score, total, solved }, k) => `
       <li class="room-player ${p.online ? '' : 'off'}">
-        <span class="room-rank">${k < 3 && total ? ['🥇', '🥈', '🥉'][k] : k + 1}</span>
+        <span class="room-rank">${k < 3 && score ? ['🥇', '🥈', '🥉'][k] : k + 1}</span>
         <span class="room-name">${api.esc(p.name)}</span>
         <span class="room-at">${solved === n ? '🏆 ครบ' : `ด่าน ${p.at + 1}/${n}`}</span>
         <span class="room-stars">⭐ ${total}</span>
+        <span class="room-score">${score} คะแนน</span>
         <span class="room-dot" aria-label="${p.online ? 'ออนไลน์' : 'หลุดการเชื่อมต่อ'}">${p.online ? '🟢' : '⚪'}</span>
       </li>`).join('')}</ol>` : '<p class="g-empty">ยังไม่มีนักเรียนเข้าห้อง</p>';
+    // who got 3 stars first on each level: for rewards in the real classroom
+    const firsts = document.getElementById('roomFirsts');
+    if (firsts) {
+      const nameOf = (id) => (host.players.get(id) || {}).name || '?';
+      firsts.innerHTML = `<ol class="room-firsts">${host.pack.levels.map((def, i) => `<li><b>ด่าน ${i + 1}</b> ${api.esc(def.title)}:
+        ${host.firsts[i].length ? host.firsts[i].map((id, k) => `${['🥇', '🥈', '🥉'][k]} ${api.esc(nameOf(id))}`).join(' · ') : '<span class="g-empty">ยังไม่มีใครได้ 3 ดาว</span>'}</li>`).join('')}</ol>`;
+    }
   }
 
   // ---------- Student: join a room ----------
@@ -187,6 +236,11 @@ window.Room = (() => {
       conn.on('data', (msg) => {
         if (student !== s || !msg) return;
         if (msg.type === 'full') { clearTimeout(timer); leave(); joinError('ห้องเต็มแล้ว'); return; }
+        if (msg.type === 'bonus') {
+          api.toast(`${['🥇', '🥈', '🥉'][msg.place - 1] || '🏅'} คุณเป็นคนที่ ${msg.place} ที่ได้ 3 ดาวในด่าน ${msg.level + 1}! +${msg.points} คะแนน`);
+          return;
+        }
+        if (msg.type === 'score') { s.score = msg.score; s.rank = msg.rank; s.players = msg.players; badgeRefresh(); return; }
         if (msg.type !== 'welcome') return;
         clearTimeout(timer);
         const wasOnline = s.online;
@@ -209,7 +263,8 @@ window.Room = (() => {
   // a small "you are in room 123456 as Nick" line for pack screens
   function badge(packCode) {
     if (!student || student.pack !== packCode) return '';
-    return `<p class="room-badge" id="roomBadge">${student.online ? '🟢' : '⚪'} ห้อง ${student.room} · ${api.esc(student.name)}${student.online ? '' : ' (หลุดการเชื่อมต่อ)'}</p>`;
+    const score = student.rank ? ` · 🏆 ${student.score} คะแนน · อันดับ ${student.rank}/${student.players}` : '';
+    return `<p class="room-badge" id="roomBadge">${student.online ? '🟢' : '⚪'} ห้อง ${student.room} · ${api.esc(student.name)}${score}${student.online ? '' : ' (หลุดการเชื่อมต่อ)'}</p>`;
   }
   function badgeRefresh() {
     const b = document.getElementById('roomBadge');

@@ -17,7 +17,8 @@ async function until(fn, ms = 6000) { const t = Date.now(); while (Date.now() - 
   localStorage.removeItem('vct-settings');
   const f = document.getElementById('f');
   f.src = '../index.html#/';
-  await wait(900);
+  // wait until the app has drawn its first screen (slower on the live site than locally)
+  await until(() => f.contentWindow.Puzzle && f.contentDocument.querySelector('#app .screen'), 20000);
   const w = f.contentWindow, d = f.contentDocument;
   const $ = (s) => d.querySelector(s), $$ = (s) => [...d.querySelectorAll(s)];
   const errs = [];

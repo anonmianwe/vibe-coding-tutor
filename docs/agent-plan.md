@@ -26,6 +26,12 @@ Last updated: 2026-11-15 (the qualifying deadline). Read `CLAUDE.md` first; it h
   - all 18 levels played on screen, including typed code and a language switch mid-level
 - **Public repo:** https://github.com/anonmianwe/vibe-coding-tutor, live at https://anonmianwe.github.io/vibe-coding-tutor/. A push to `main` updates the live site within about a minute, so commit and push only when the user asks. Commits use the GitHub noreply email (set in this repo's git config). The organizers' rules PDF is in `.gitignore` and must stay private.
 - **Team:** the user tests the app. Their partner writes the proposal, slides and demo video.
+- **End of the 2026-11-15 session:** the app is feature-complete and live. The partner has been invited as a GitHub collaborator, and the demo video script is in `docs/demo-video-script.md`. Still open, all human work:
+  - the proposal, slides and video
+  - the team checklist in `docs/AI-content-and-tools.md`
+  - the empty "What we checked or changed" cells in `docs/AI-usage-log.md`
+  - testing the live room on the venue's Wi-Fi
+  - **Don't push risky changes to `main` while judges may be looking.**
 
 ## Decisions the user made (don't reopen without asking)
 - Grid gameplay only. No reading cards, no boss.

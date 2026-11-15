@@ -31,6 +31,12 @@ Entry for the KMUTNB ComEdu Open House 2027 Vibe Coding Challenge, Topic 4: ห�
   - 🎨 **Bit colors:** purple, then green 8 ⭐, orange 15, pink 22, blue 30, gold 40. The high-contrast theme always keeps Bit in the theme color.
   - ⭐ **Challenge levels:** one per chapter, unlocked with 2 stars per level on average in that chapter. They never block the main path. The loops challenge introduces nested loops; the debugging challenge has two bugs.
   - Hints, the solution button, read aloud and all accessibility settings are always free.
+- **🏫 Teacher mode** (home screen → "สำหรับคุณครู"):
+  - Build a pack of up to 8 levels: draw the map (start, flag, rocks, gems), choose the allowed blocks, and write a title, task and hint.
+  - The teacher must **solve each level first**. That program becomes the solution, and its length becomes the 3-star target, so an unsolvable level can never be shared.
+  - Share as a **link or QR code**. The whole pack is compressed into the link (`#/pack/<code>`), so nothing is stored online. A 2-level pack is about 270 characters.
+  - Students open the link and play the pack in order, in their chosen language. Their stars stay in their own browser. Broken or edited links are rejected.
+  - Teacher-written text has no pre-made audio, so the browser's Thai voice reads it, if the device has one.
 - **Help:** a hint after every failed run, and a solution button after 2 fails, so no one gets stuck.
 - **Accessibility:**
   - 🔊 Read aloud in Thai with **pre-made audio** (male voice, works on every device, with a speed setting). The browser's own voice is only a fallback
@@ -56,6 +62,8 @@ Comments (`#` in Python, `//` and `/* */` in C) are allowed.
 | `js/content/words.js` | The hard-word list and the badges |
 | `js/content/chapter-1.js` … `chapter-6.js` | One file per chapter: levels, a challenge level and tips. **`chapter-1.js` explains the format.** |
 | `js/puzzle.js` | The game engine: grid, running programs, code in Python and C, the parsers for typed code, the editor |
+| `js/teacher.js` | Teacher mode: level-pack editor, test runs, link/QR sharing, and playing a shared pack |
+| `js/vendor/qrcode.min.js` | QR code library (qrcode-generator 1.4.4, MIT), copied into the repo so it works without internet access to a CDN |
 | `js/app.js` | Screens and routes (language picker, map, level), settings, read aloud, saving, stars, XP and badges |
 | `audio/` | Pre-made voice files (mp3) and `manifest.js` |
 | `tools/speech-list.html`, `tools/make_audio.py` | List every spoken sentence, and make the missing audio files |
@@ -90,4 +98,5 @@ Push to GitHub, then go to Settings → Pages → Deploy from branch → `main` 
 
 ## Credits
 Some activity ideas come from [CS Unplugged](https://classic.csunplugged.org/) and [CS50](https://cs50.harvard.edu/x/) (both CC BY-NC-SA 4.0). All text in the app is written by the team.
+QR codes: [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) by Kazuhiko Arase (MIT License).
 All names and examples are made up. There is no real student data.

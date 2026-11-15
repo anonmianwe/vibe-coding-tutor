@@ -382,6 +382,7 @@
   });
 
   // ---------- Start: choose a language ----------
+  let afterLang = null; // a pack link opened before a language was chosen
   const SAMPLE = 'for i in range(3):\n    move()\n    turn_right()';
   const SAMPLE_C = 'for (int i = 0; i < 3; i++) {\n    move();\n    turn_right();\n}';
   function renderStart() {
@@ -406,7 +407,9 @@
     </section>`;
     app.querySelectorAll('[data-lang]').forEach((b) => b.addEventListener('click', () => {
       setSetting('lang', b.dataset.lang);
-      go(first ? '#/level/0' : '#/');
+      const back = afterLang;
+      afterLang = null;
+      go(back || (first ? '#/level/0' : '#/'));
     }));
   }
 
@@ -464,6 +467,10 @@
       </div>
       ${rewardsHtml()}
       <ol class="chapters">${chapters}</ol>
+      <a class="teach-card" href="#/teach">
+        <span class="teach-icon" aria-hidden="true">🏫</span>
+        <span><b>สำหรับคุณครู: สร้างชุดด่านเอง</b><br><span class="note">วาดแผนที่ เลือกคำสั่ง ทดสอบ แล้วแชร์ให้นักเรียนด้วยลิงก์หรือ QR</span></span>
+      </a>
       <h2 class="section-title">เหรียญรางวัล (${progress.badges.length}/${BADGES.length})</h2>
       <ul class="badge-shelf">${badges}</ul>
     </section>`;
@@ -535,6 +542,19 @@
     $('#tipEn').addEventListener('click', () => { setSetting('showEn', !settings.showEn, true); $('#tipEn').focus(); });
   }
 
+  // put any level on screen: used by the teacher editor (test runs) and by shared packs
+  function mountLevel({ def, head, finish, canType: canTypeHere }) {
+    currentEntry = { def };
+    currentPuzzle = window.Puzzle.mount({
+      el: app, def, head, tipHtml: '',
+      esc, speak, mascot, mascotSvg: MASCOT, stars,
+      motion: () => settings.motion,
+      lang: () => settings.lang,
+      canType: canTypeHere || canType, canStep, stepNeed: STEP_NEED,
+      finish
+    });
+  }
+
   // entry = a main level (index i) or a challenge level (i = null)
   function renderLevel(entry, i) {
     currentEntry = entry;
@@ -602,9 +622,11 @@
   function route() {
     stopSpeaking();
     currentPuzzle = null;
-    const [screen, n] = location.hash.replace(/^#\/?/, '').split('/');
+    const [screen, n, ...rest] = location.hash.replace(/^#\/?/, '').split('/');
     const i = parseInt(n, 10);
+    if (!settings.lang && (screen === 'pack' || screen === 'teach')) afterLang = location.hash; // come back here after choosing
     if (!settings.lang || screen === 'start') renderStart();
+    else if (window.Teacher.route(screen, [n, ...rest])) { /* teacher editor, or a pack shared by link */ }
     else if (screen === 'level' && LEVELS[i] && isUnlocked(i)) renderLevel(LEVELS[i], i);
     else if (screen === 'challenge' && CHALLENGES.find((c) => c.ci === i && challengeOpen(c))) renderLevel(CHALLENGES.find((c) => c.ci === i), null);
     else renderHome();
@@ -616,6 +638,10 @@
   }
 
   // ---------- Start ----------
+  window.Teacher.init({
+    app, esc, toast, go, settings, mascot, MASCOT, stars, mountLevel,
+    progress: () => progress, saveProgress, hash: audioKey
+  });
   $('#brandMascot').innerHTML = MASCOT;
   initSettings();
   applySettings();

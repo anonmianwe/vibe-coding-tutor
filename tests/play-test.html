@@ -210,7 +210,67 @@ async function until(fn, ms = 6000) { const t = Date.now(); while (Date.now() - 
   ok(w.getComputedStyle($('.m-head')).fill === 'rgb(201, 154, 6)', 'Bit is drawn in gold');
   noHScroll('home with rewards');
 
-  // ---- 5. saving, rewards, settings ----
+  // ---- 5. teacher: build a pack, test it, share it, play it as a student ----
+  localStorage.removeItem('vct-teacher-pack');
+  w.location.hash = '#/teach'; await wait(100);
+  ok($('.teach') && $$('.ed-cell').length === 15, 'teacher editor opens with a 3×5 map');
+  ok(!$('#edShare'), 'sharing is locked until every level is tested');
+  const draftNow = () => JSON.parse(localStorage.getItem('vct-teacher-pack'));
+  $('[data-tool="#"]').click();
+  $('.ed-cell[data-r="0"][data-c="2"]').click();
+  ok(draftNow().levels[0].grid[0] === 'S.#..', 'tapping with the rock tool draws a rock');
+  $('.ed-cell[data-r="0"][data-c="0"]').click();
+  ok(draftNow().levels[0].grid[0][0] === 'S', 'the start cannot be painted over');
+  $('[data-block="repeat"]').click();
+  ok(draftNow().levels[0].blocks.includes('repeat'), 'teacher can allow the loop block');
+  const title = $('#edTitle');
+  title.value = 'หลบหินก้อนแรก'; title.dispatchEvent(new w.Event('input'));
+  ok(draftNow().levels[0].title === 'หลบหินก้อนแรก', 'level title is saved as the teacher types');
+  $('#edTest').click(); await wait(120);
+  ok($('.puzzle') && $('h1').textContent.includes('ทดสอบ'), 'test run opens the level');
+  $('#pzTypeTab').click();
+  $('#pzText').value = 'turn_right();\nmove();\nmove();\nturn_left();\nfor (int i = 0; i < 4; i++) {\n    move();\n}';
+  $('#pzGo').click();
+  ok(await until(() => $('#pzResult .pz-win')), 'teacher solves own level');
+  $('#pzNext').click(); await wait(120);
+  ok($('.ed-status.ok') && draftNow().levels[0].best === 6, 'level marked tested, 3-star target = 6 blocks: ' + ($('.ed-status') || {}).textContent);
+  $('#edAdd').click(); await wait(50);
+  ok(draftNow().levels.length === 2 && !$('#edShare'), 'a new level needs testing before sharing');
+  $('#edTest').click(); await wait(120);
+  for (const b of ['right', 'move', 'move', 'left', 'move', 'move', 'move', 'move']) $(`[data-add="${b}"]`).click();
+  $('#pzGo').click();
+  ok(await until(() => $('#pzResult .pz-win')), 'teacher solves level 2 by tapping');
+  $('#pzNext').click(); await wait(120);
+  ok($('#edShare'), 'sharing unlocks when all levels are tested');
+  $('#edShare').click();
+  const urlBox = await until(() => $('#shareUrl'));
+  const url = urlBox ? urlBox.value : '';
+  ok(url.includes('#/pack/z'), 'share makes a compressed pack link (' + url.length + ' characters)');
+  ok($('#shareQr svg'), 'share shows a QR code');
+  const code = url.split('#/pack/')[1];
+  const pack = await w.Teacher.decodePack(code);
+  ok(pack.levels.length === 2 && pack.levels[0].best === 6 && pack.levels[0].title === 'หลบหินก้อนแรก', 'the link holds the whole pack');
+  let rejected = false;
+  try { await w.Teacher.decodePack(code.slice(0, -6) + 'AAAAAA'); } catch (e) { rejected = true; }
+  ok(rejected, 'a broken or edited link is rejected');
+  // play as a student
+  w.location.hash = `#/pack/${code}`;
+  ok(await until(() => $('.pack')), 'student opens the pack link');
+  ok($$('.pack .lvl').length === 2 && $$('.pack .lvl.locked').length === 1, 'pack shows 2 levels, the second locked');
+  $('.pack a.lvl').click();
+  ok(await until(() => $('.puzzle')), 'student plays level 1 of the pack');
+  $('#pzTypeTab').click();
+  $('#pzText').value = 'turn_right();\nmove();\nmove();\nturn_left();\nfor (int i = 0; i < 4; i++) {\n    move();\n}';
+  $('#pzGo').click();
+  ok(await until(() => $('#pzResult .pz-win')) && $$('.pz-win .big-stars .star.on').length === 3, 'student gets 3 stars by matching the teacher');
+  $('#pzNext').click();
+  ok(await until(() => $('.puzzle') && $('h1').textContent.includes('ด่าน 2/2')), 'next goes to level 2 of the pack');
+  w.location.hash = '#/pack/' + code.slice(0, -6) + 'AAAAAA';
+  ok(await until(() => $('.screen') && $('.screen').textContent.includes('เปิดไม่ได้')), 'a broken link shows a friendly message');
+  w.location.hash = '#/'; await wait(100);
+  ok($('.teach-card'), 'home has the teacher card');
+
+  // ---- 6. saving, rewards, settings ----
   const p = JSON.parse(localStorage.getItem('vct3-progress'));
   ok(Object.keys(p.stars).length === LEVELS.length + 6, 'all levels and challenges saved');
   ok(['first', 'persist', 'typist', 'bilingual', 'loop', 'all', 'challenger'].every((b) => p.badges.includes(b)), 'badges: ' + p.badges.join(', '));

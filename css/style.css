@@ -474,6 +474,40 @@ a.lvl:hover { border-color: var(--primary); }
 .pz-typetools { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin-top: .3rem; }
 .pz-error { margin: .4rem 0 0; padding: .4rem .7rem; border-radius: 10px; border: var(--bw) solid var(--bad); background: var(--bad-bg); color: var(--text); font-weight: 600; }
 
+/* ---------- Teacher: level-pack editor and shared packs ---------- */
+.teach-card {
+  display: flex; align-items: center; gap: .8rem; margin-top: 1rem; padding: .8rem 1rem; text-decoration: none; color: var(--text);
+  background: var(--surface); border: var(--bw) dashed var(--primary); border-radius: var(--radius);
+}
+.teach-card:hover { border-style: solid; }
+.teach-icon { font-size: 2rem; }
+.teach-how { margin-bottom: .8rem; }
+.teach-how .steps { font-size: 1rem; }
+.teach-note { margin: 0 0 .8rem; }
+.field { display: flex; flex-direction: column; gap: .2rem; font-weight: 600; font-size: .9rem; margin-bottom: .6rem; }
+.field input, .field textarea, .ed-size select {
+  font: inherit; font-weight: 400; font-size: 1rem; color: var(--text); background: var(--bg);
+  border: var(--bw) solid var(--border); border-radius: 10px; padding: .35rem .6rem; width: 100%;
+}
+.field input:focus, .field textarea:focus, .ed-size select:focus { outline: 4px solid var(--accent); outline-offset: 1px; }
+.ed-tabs, .ed-tools { display: flex; flex-wrap: wrap; gap: .4rem; margin: .4rem 0 .6rem; }
+.ed-tabs .seg-btn, .ed-tools .seg-btn { flex: 0 1 auto; }
+.ed-level { background: var(--surface); border: var(--bw) solid var(--border); border-radius: var(--radius); padding: 1rem; }
+.ed-size { display: flex; gap: 1rem; margin-bottom: .4rem; }
+.ed-size label { display: flex; align-items: center; gap: .4rem; font-weight: 600; }
+.ed-size select { width: auto; }
+.ed-board { margin: .4rem 0 .8rem; }
+.ed-cell { cursor: pointer; padding: 0; color: inherit; font: inherit; font-size: min(1.6rem, 7vw); }
+.ed-cell:hover { border-color: var(--primary); }
+.ed-blocks { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: .2rem .8rem; }
+.ed-status { font-weight: 700; margin: .6rem 0 0; color: var(--muted); }
+.ed-status.ok { color: var(--ok); }
+.ed-share { margin-top: 1rem; background: var(--surface); border: var(--bw) solid var(--accent); border-radius: var(--radius); padding: 1rem; }
+/* the QR code stays dark-on-white in every theme, so phones can scan it */
+.qr-box { background: #fff; padding: .6rem; border-radius: 12px; width: min(22rem, 100%); margin: .8rem auto 0; }
+.qr-box svg { display: block; width: 100%; height: auto; }
+.pack .chapter { margin-bottom: 1rem; }
+
 /* ---------- Dialogs ---------- */
 .dlg {
   width: min(32rem, calc(100vw - 2rem)); max-height: calc(100vh - 2rem);

@@ -69,6 +69,15 @@ window.Puzzle = (() => {
     return list(undefined);
   }
 
+  // blocks → short program text, the opposite of parseDsl: [repeat 3 [move]] → "3{M}"
+  function toDsl(list) {
+    return list.map((b) => {
+      if (b.t === 'repeat') return `${b.n}{${toDsl(b.body)}}`;
+      if (b.t === 'if') return `?${b.cond}{${toDsl(b.then)}}{${toDsl(b.else)}}`;
+      return { move: 'M', left: 'L', right: 'R', pick: 'P' }[b.t];
+    }).join(' ');
+  }
+
   // ---------- Blocks → Python or C code ----------
   // Returns lines: [{ text, id }] where id is the block that starts on that line.
   function toCode(program, lang) {
@@ -638,7 +647,7 @@ window.Puzzle = (() => {
     function drawProgram() {
       if (!listByKey(st.target)) st.target = 'root';
       $('#pzProg').innerHTML = listHtml(st.program, 'root', 0);
-      $('#pzCount').textContent = `(${count(st.program)} คำสั่ง · ดีที่สุด ${def.best})`;
+      $('#pzCount').textContent = def.best ? `(${count(st.program)} คำสั่ง · ดีที่สุด ${def.best})` : `(${count(st.program)} คำสั่ง)`;
     }
     function drawLang() {
       $('#pzLang').textContent = lang() === 'python' ? '🐍 Python' : '🅲 C';
@@ -659,7 +668,7 @@ window.Puzzle = (() => {
       $('#pzProg').hidden = typing;
       $('#pzTypeBox').hidden = !typing;
       if (!typing) drawProgram();
-      else $('#pzCount').textContent = `(ดีที่สุด ${def.best} คำสั่ง)`;
+      else $('#pzCount').textContent = def.best ? `(ดีที่สุด ${def.best} คำสั่ง)` : '';
     }
 
     // ----- typing mode -----
@@ -903,19 +912,20 @@ window.Puzzle = (() => {
       // spoken without the line number, so every piece has a pre-made audio file
       const spoken = (maps.length > 1 ? [MSG.map(m + 1)] : []).concat([msg, MSG.hint, def.hint]);
       say(`${where}${esc(msg)}<br>💡 <b>คำใบ้:</b> ${esc(def.hint)}`, 'think', spoken);
-      if (st.fails >= 2) $('#pzSolve').hidden = false;
+      if (st.fails >= 2 && def.solution) $('#pzSolve').hidden = false;
     }
 
     function win() {
       setBusy(false);
       const n = count(st.program);
-      const stars = st.usedSolution ? 1 : n <= def.best ? 3 : n <= def.best + 2 ? 2 : 1;
-      const next = ctx.finish(stars, { fails: st.fails, usedSolution: st.usedSolution, typed: st.mode === 'type' });
-      const msg = stars === 3 ? MSG.win3 : st.usedSolution ? MSG.winSolution : MSG.winShorter(def.best);
+      const best = def.best || n; // no target yet (teacher's test run): this program is the target
+      const stars = st.usedSolution ? 1 : n <= best ? 3 : n <= best + 2 ? 2 : 1;
+      const next = ctx.finish(stars, { fails: st.fails, usedSolution: st.usedSolution, typed: st.mode === 'type', program: toDsl(st.program), blocks: n });
+      const msg = stars === 3 ? MSG.win3 : st.usedSolution ? MSG.winSolution : MSG.winShorter(best);
       say(`<b>${msg}</b>`, 'happy', [msg]);
       $('#pzResult').innerHTML = `<div class="pz-win">
         <p class="big-stars" aria-label="ได้ ${stars} จาก 3 ดาว">${ctx.stars(stars)}</p>
-        <p>ใช้ ${n} คำสั่ง · ดีที่สุด ${def.best} คำสั่ง</p>
+        <p>ใช้ ${n} คำสั่ง · ดีที่สุด ${best} คำสั่ง</p>
         <div class="finish-actions">
           <a class="btn big primary" href="${next.href}" id="pzNext">${next.label}</a>
           <button type="button" class="btn big" id="pzAgain">↻ เล่นด่านนี้อีกครั้ง</button>
@@ -947,5 +957,5 @@ window.Puzzle = (() => {
     </div>`;
   }
 
-  return { mount, simulate, runAll, parseDsl, parseCode, toCode, codeText, count, speechTexts };
+  return { mount, simulate, runAll, parseDsl, toDsl, parseCode, toCode, codeText, count, speechTexts, goalText };
 })();

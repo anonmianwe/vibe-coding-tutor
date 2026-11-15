@@ -16,7 +16,8 @@ Last updated: 2026-11-15 (the qualifying deadline). Read `CLAUDE.md` first; it h
   - The first level of each new idea has a short tip with code in the chosen language and a syntax note.
   - Tap mode shows blocks as real code. Typing mode unlocks after chapter 1.
 - **Star rewards (added after the user's request):** step mode (5 ⭐), Bit colors, and 6 challenge levels (`challenge` in each chapter file, route `#/challenge/<chapter index>`).
-- **Test:** `tests/play-test.html` has 216 checks, all passing. It covers:
+- **Read aloud:** 211 pre-made mp3 files in `audio/` (see README). `speak()` takes a sentence or a list of sentences; each is looked up by `audioKey(spoken(text))`. Keep spoken text free of changing numbers so every piece can have a file.
+- **Test:** `tests/play-test.html` has 220 checks, all passing. It covers:
   - every solution and its `best` count
   - the buggy start programs really failing
   - a Python and C round-trip of every solution
@@ -32,8 +33,8 @@ Last updated: 2026-11-15 (the qualifying deadline). Read `CLAUDE.md` first; it h
 - Tap first, type later (typing unlocks after chapter 1: `TYPING_UNLOCK` in `app.js`).
 - Keep: short tips, stars/XP/badges, hard-word pop-ups.
 - Competitive mode: skipped.
-- TTS audio: **don't start** until the user says the gameplay is finished.
-- **Teacher's create mode:** the user's idea, to discuss **after TTS**. Don't build it before talking to the user.
+- TTS audio: **done** (edge-tts, male voice th-TH-NiwatNeural, chosen by the user). After changing any spoken text, regenerate the audio (README → Read aloud); the test fails if a sentence has no file.
+- **Teacher's create mode:** the user's idea, and the **next thing to discuss** (TTS is done). Don't build it before talking to the user.
 
 ## Files
 | File | What it does |
@@ -50,7 +51,6 @@ The game's language subset: `move turn_left turn_right pick_gem`, `for` with a f
 2. `while` loops (for example `while not at_flag():`): the parsers, `toCode`, a block, and a chapter.
 3. Puzzles for lists, sorting and binary search: these need new world features (crates with numbers).
 4. Polish: show the level on phones (the level chip is hidden under 420px), and keyboard shortcuts.
-5. TTS audio (blocked: see the decisions above).
 
 ## Content still needs a human check
 All tips, levels and code examples were written by AI, and the AI log has a TODO for the team to check them. Don't mark them as checked yourself.

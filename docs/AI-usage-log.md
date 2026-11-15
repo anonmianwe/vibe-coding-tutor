@@ -23,6 +23,7 @@ It also requires listing any AI-made images, audio or icons.
 | 10 | 2026-11-15 | After testing: "doesn't seem promising because of how it's introduced. Cut to only grid gameplay, and let the user choose the language at the start: C and Python" | AI asked how code should be written (we chose tap first, type later), what to keep (short tips, stars/XP/badges, word pop-ups) and switching (anytime). It rebuilt the game: language picker, 18 levels in 6 chapters, tips with code in both languages, every block shown as real code, a typing mode with small Python and C parsers and Thai error messages. The automated test checks every level, both parsers and plays all 18 levels (167 checks pass) | We decided the new direction and the 3 choices above. TODO: both team members check the tips, levels and the code examples in both languages |
 | 11 | 2026-11-15 | "Make it a public repo" | AI found no GitHub login on the computer and explained the options. After we logged in with the GitHub CLI, it created the public repo, used the GitHub noreply email for commits, left the organizers' rules PDF out, turned on GitHub Pages and ran the test on the live site | We chose to keep the rules PDF private |
 | 12 | 2026-11-15 | "What can stars be used for, both cosmetic and valuable?", then "do Bit colors, step mode and challenge levels" | AI suggested milestone rewards that are never spent, and keeping help free. It built step mode (5 ⭐), 6 Bit colors and 6 challenge levels (incl. nested loops and a two-bug debug level). The test now has 216 checks, all passing | We chose the 3 features. Teacher's create mode is our idea, planned after TTS. TODO: check the challenge levels and the step-mode explanations |
+| 13 | 2026-11-15 | "Should we render the voice ourselves or tune our own voice model?", then "use the male voice from edge-tts, we have no time left" | AI advised pre-rendering with an existing voice instead of tuning a model (time, data, consent). It made the app speak in fixed sentences, wrote tools to list every sentence and make one mp3 each with edge-tts (th-TH-NiwatNeural), and fixed how code words are said. 211 files; the test checks every sentence has a file (220 checks pass) | We chose edge-tts and the male voice. TODO: listen to the audio and report any word said wrong |
 
 ## Problems and fixes
 | Problem | How it was fixed |
@@ -36,10 +37,13 @@ It also requires listing any AI-made images, audio or icons.
 | The C syntax notes in the tips contain literal braces like `{ }`, but the hard-word markup `{คำ}` treated them as words and deleted them, so students would have read the notes with the braces missing | Found by the automated test. The markup now only matches Thai words, and the test checks that the C note still shows `{ }` |
 | The automated test crashed on the live GitHub Pages site but passed locally | The page loads slower over the network than the test's fixed 0.9-second wait. The test now waits until the app has drawn its first screen |
 | A shell command that edited the test file was blocked by Claude Code's safety check (it could not parse the command) | Put the same edit script in a file and ran it from there; nothing was deleted |
+| Live read-aloud (Web Speech API) made no sound on our computer, because it has no Thai voice | Switched to pre-made audio files, so every device sounds the same. The browser voice is only a fallback |
+| The computer had no pip, so edge-tts could not be installed | We installed python3-venv (`sudo apt install python3-venv`), and AI installed edge-tts in a temporary virtual environment |
+| The voice would read code symbols badly, or skip them (`_`, `;`, `{ }`, `#`) | A symbol on its own is now said by name (for example "เซมิโคลอน", "วงเล็บปีกกาเปิด"); inside code it is dropped (`move();` → "move") |
 
 ## AI-generated media (images, audio, icons)
 | File | Tool | Notes |
 |---|---|---|
 | Mascot "น้องบิต" (robot SVG in `js/app.js`) | Claude Code | Drawn as code (SVG shapes), not a copied image. Bosses and map tiles are standard emoji |
 | Flowchart shapes, box and if/else diagrams (SVG in `js/app.js`) | Claude Code | Drawn as code |
-| Read-aloud voice | Browser's built-in speech (Web Speech API) | Not an AI-made recording; it's generated live on the user's device |
+| Read-aloud voice: 211 files in `audio/*.mp3` | edge-tts (Microsoft Edge text-to-speech), voice th-TH-NiwatNeural (male) | AI-made audio, generated from our own lesson text with `tools/make_audio.py`. The browser voice (Web Speech API) is only a fallback |

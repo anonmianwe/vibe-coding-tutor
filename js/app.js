@@ -65,8 +65,6 @@
   // {คำ} → a tappable hard word. Only Thai words in the word list; other braces (C code like { }) stay as they are.
   const rich = (s) => esc(s).replace(/\{([฀-๿]+)\}/g, (m, w) =>
     WORDS[w] ? `<button type="button" class="word" data-word="${w}">${w}</button>` : m);
-  // text for the speech engine: drop the word markers, keep code braces out of the spoken text
-  const plain = (s) => String(s).replace(/\{([฀-๿]+)\}/g, '$1').replace(/[{}"]/g, ' ').replace(/→/g, ' แล้ว ').replace(/_/g, ' ');
   const starsOf = (i) => progress.stars[LEVELS[i].id] || 0;
   const isUnlocked = (i) => i === 0 || starsOf(i - 1) > 0;
   const chapterDone = (chId) => LEVELS.filter((l) => l.ch.id === chId).every((l) => progress.stars[l.id]);
@@ -101,18 +99,60 @@
   </svg>`;
   const mascot = (mood = '') => `<div class="mascot ${mood}">${MASCOT}</div>`;
 
-  // ---------- Read aloud (Web Speech API) ----------
-  // TODO (after the gameplay is finished): play pre-made audio files first, fall back to this.
+  // ---------- Read aloud ----------
+  // 1) Pre-made audio: tools/make_audio.py makes one mp3 per sentence (male Thai voice th-TH-NiwatNeural,
+  //    Microsoft Edge TTS) and lists them in audio/manifest.js. A file is found by a short code made from the text.
+  // 2) If there is no file for a sentence, the browser's own Thai voice reads it (Web Speech API), if it has one.
+  // Text is spoken in pieces (an array of sentences), so each piece can have its own file.
+  const AUDIO = window.AUDIO_FILES || {};
   const canSpeak = 'speechSynthesis' in window;
   let thaiVoice = null;
   let speakingBtn = null;
+  let audioEl = null;
+  let speakRun = 0; // bumps on every new speak/stop, so old pieces stop playing
+
+  // how a sentence is said: no emoji, and code words in a form the voice reads well
+  // A symbol standing on its own is said by name ("ลืม ;" → "ลืม เซมิโคลอน");
+  // inside code it is dropped ("move();" → "move").
+  const SYMBOL_NAMES = [['{ }', 'วงเล็บปีกกา'], ['()', 'วงเล็บ'], ['//', 'ทับสองตัว'], ['{', 'วงเล็บปีกกาเปิด'], ['}', 'วงเล็บปีกกาปิด'],
+    [';', 'เซมิโคลอน'], [':', 'โคลอน'], ['#', 'แฮช'], ['_', 'ขีดล่าง']];
+  // Words the voice runs together: add spaces in the spoken version only (the screen text stays the same)
+  const SAY_APART = [['บิต', ' บิต '], ['ชนหิน', 'ชน หิน']];
+  function spoken(s) {
+    let t = ` ${String(s)} `.replace(/\{([฀-๿]+)\}/g, '$1') // hard-word markers
+      .replace(/\(semicolon\)/g, '');
+    SAY_APART.forEach(([word, said]) => { t = t.split(word).join(said); });
+    SYMBOL_NAMES.forEach(([sym, name]) => { t = t.split(` ${sym} `).join(` ${name} `); });
+    return t
+      .replace(/\(\s*\)/g, '') // move() → move
+      .replace(/;/g, '') // move(); → move
+      .replace(/<=/g, ' น้อยกว่าหรือเท่ากับ ').replace(/>=/g, ' มากกว่าหรือเท่ากับ ')
+      .replace(/\s<\s/g, ' น้อยกว่า ').replace(/\+\+/g, ' บวกบวก ')
+      .replace(/_/g, ' ')
+      .replace(/→/g, ' แล้ว ')
+      .replace(/[{}"#⚡🏁💎🪨✓✗🎉💪😢🤖]/g, ' ')
+      .replace(/\p{Extended_Pictographic}/gu, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+  // short code for a sentence (FNV-1a hash). tools/make_audio.py uses the codes listed by tools/speech-list.html.
+  function audioKey(text) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+    return h.toString(16).padStart(8, '0');
+  }
+
   function loadVoices() {
-    if (!canSpeak) return;
-    const voices = speechSynthesis.getVoices();
-    thaiVoice = voices.find((v) => /^th/i.test(v.lang)) || null;
+    if (canSpeak) {
+      const voices = speechSynthesis.getVoices();
+      thaiVoice = voices.find((v) => /^th/i.test(v.lang)) || null;
+    }
     const note = $('#voiceNote');
-    if (note) note.textContent = thaiVoice ? `เสียงที่ใช้: ${thaiVoice.name}`
-      : voices.length ? 'ไม่พบเสียงภาษาไทยในเครื่องนี้ ลองใช้ Chrome หรือ Edge หรือติดตั้งเสียงภาษาไทยในเครื่อง' : '';
+    if (!note) return;
+    const files = Object.keys(AUDIO).length;
+    note.textContent = files
+      ? 'เสียงอ่านเตรียมไว้แล้ว (เสียงผู้ชาย สร้างด้วย Microsoft Edge TTS) ใช้ได้ทุกเครื่อง'
+      : thaiVoice ? `เสียงที่ใช้: ${thaiVoice.name}` : 'ไม่พบเสียงภาษาไทยในเครื่องนี้ ลองใช้ Chrome หรือ Edge';
   }
   if (canSpeak) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
 
@@ -120,23 +160,74 @@
     if (speakingBtn) { speakingBtn.classList.remove('speaking'); speakingBtn.setAttribute('aria-pressed', 'false'); }
     speakingBtn = null;
   }
-  function stopSpeaking() { if (canSpeak) speechSynthesis.cancel(); resetSpeakBtn(); }
-  function speak(text, btn, count = true) {
-    if (!canSpeak) { toast('เบราว์เซอร์นี้อ่านออกเสียงไม่ได้ 😢'); return; }
+  function stopSpeaking() {
+    speakRun++;
+    if (audioEl) { audioEl.pause(); audioEl = null; }
+    if (canSpeak) speechSynthesis.cancel();
+    resetSpeakBtn();
+  }
+  // speak(text or [pieces], button)
+  function speak(input, btn, count = true) {
     if (btn && btn === speakingBtn) { stopSpeaking(); return; } // press again = stop
     stopSpeaking();
-    const u = new SpeechSynthesisUtterance(plain(text));
-    u.lang = 'th-TH';
-    if (thaiVoice) u.voice = thaiVoice;
-    u.rate = settings.rate;
+    const pieces = (Array.isArray(input) ? input : [input]).map(spoken).filter(Boolean);
+    if (!pieces.length) return;
+    if (!pieces.some((t) => AUDIO[audioKey(t)]) && !canSpeak) { toast('เครื่องนี้อ่านออกเสียงไม่ได้ 😢'); return; }
+    const run = speakRun;
     if (btn) { speakingBtn = btn; btn.classList.add('speaking'); btn.setAttribute('aria-pressed', 'true'); }
-    u.onend = u.onerror = () => { if (speakingBtn === btn) resetSpeakBtn(); };
-    speechSynthesis.speak(u);
+    const finish = () => { if (run === speakRun) resetSpeakBtn(); };
+    const play = (i) => {
+      if (run !== speakRun) return;
+      if (i >= pieces.length) { finish(); return; }
+      const text = pieces[i];
+      const next = () => play(i + 1);
+      const live = () => {
+        if (!canSpeak) { next(); return; }
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'th-TH';
+        if (thaiVoice) u.voice = thaiVoice;
+        u.rate = settings.rate;
+        u.onend = u.onerror = () => { if (run === speakRun) next(); };
+        speechSynthesis.speak(u);
+      };
+      const key = audioKey(text);
+      if (!AUDIO[key]) { live(); return; }
+      const a = new Audio(`audio/${key}.mp3`);
+      audioEl = a;
+      a.preservesPitch = true;
+      a.defaultPlaybackRate = a.playbackRate = settings.rate; // the speed slider
+      a.onended = () => { if (run === speakRun) next(); };
+      a.onerror = () => { if (run === speakRun) live(); };
+      a.play().catch(() => { if (run === speakRun) live(); });
+    };
+    play(0);
     if (count) {
       progress.listens = (progress.listens || 0) + 1;
       saveProgress();
     }
   }
+
+  // Every sentence the app can read aloud (used by tools/speech-list.html to make the audio files).
+  const GREET = {
+    first: 'มาเริ่มกันเลย! กดด่าน 1 แล้วเขียนโค้ดพาผมไปที่ธง',
+    more: 'เก่งมาก! ไปด่านต่อไปกันเลย',
+    all: 'สุดยอด! ผ่านครบทุกด่านแล้ว ลองกลับไปเก็บ 3 ดาวทุกด่าน หรือลองอีกภาษาดูสิ'
+  };
+  const RATE_TEST = 'สวัสดีครับ ผมชื่อน้องบิต มาเขียนโปรแกรมด้วยกันนะ';
+  const EXAMPLE = 'ตัวอย่าง';
+  function allSpeech() {
+    const texts = [RATE_TEST, EXAMPLE, ...Object.values(GREET)];
+    LEVELS.concat(CHALLENGES).forEach((l) => {
+      texts.push(...window.Puzzle.speechTexts(l.def));
+      const t = l.def.tip;
+      if (t) texts.push(t.text, t.simple, t.notes.python, t.notes.c);
+    });
+    Object.entries(WORDS).forEach(([w, info]) => texts.push(w, info.meaning, info.example));
+    const seen = new Map();
+    texts.map(spoken).filter(Boolean).forEach((t) => seen.set(audioKey(t), t));
+    return [...seen].map(([key, text]) => ({ key, text, has: !!AUDIO[key] }));
+  }
+  window.SPEECH = { all: allSpeech, spoken, audioKey };
 
   // ---------- Rewards: badges and XP ----------
   function award(id) {
@@ -220,7 +311,7 @@
     buildSeg($('#segSize'), SIZES, SIZE_NAMES, 'size');
     buildSeg($('#segTheme'), THEMES, THEME_NAMES, 'theme');
     $('#rate').addEventListener('input', (e) => setSetting('rate', parseFloat(e.target.value)));
-    $('#rateTest').addEventListener('click', (e) => speak('สวัสดีครับ ผมชื่อน้องบิต มาเขียนโปรแกรมด้วยกันนะ', e.currentTarget, false));
+    $('#rateTest').addEventListener('click', (e) => speak(RATE_TEST, e.currentTarget, false));
     $('#optSimple').addEventListener('change', (e) => setSetting('simple', e.target.checked, true));
     $('#optEn').addEventListener('change', (e) => setSetting('showEn', e.target.checked, true));
     $('#optFont').addEventListener('change', (e) => setSetting('font', e.target.checked ? 'looped' : 'sarabun'));
@@ -283,7 +374,7 @@
   }
   $('#wordSpeak').addEventListener('click', (e) => {
     const info = WORDS[currentWord];
-    if (info) speak(`${currentWord}. ${info.meaning}. ตัวอย่าง: ${info.example}`, e.currentTarget);
+    if (info) speak([currentWord, info.meaning, EXAMPLE, info.example], e.currentTarget);
   });
   document.addEventListener('click', (e) => {
     const w = e.target.closest('.word');
@@ -376,7 +467,8 @@
       <h2 class="section-title">เหรียญรางวัล (${progress.badges.length}/${BADGES.length})</h2>
       <ul class="badge-shelf">${badges}</ul>
     </section>`;
-    $('#greetRead').addEventListener('click', (e) => speak(greet, e.currentTarget));
+    const greetSpoken = solved === 0 ? GREET.first : nextI < 0 ? GREET.all : GREET.more;
+    $('#greetRead').addEventListener('click', (e) => speak(greetSpoken, e.currentTarget));
     app.querySelectorAll('[data-color]').forEach((b) => b.addEventListener('click', () => {
       setSetting('bitColor', b.dataset.color);
       app.querySelectorAll('[data-color]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
@@ -437,7 +529,7 @@
     if (!tip || !$('#tipBox')) return;
     $('#tipRead').addEventListener('click', (e) => {
       const text = settings.simple && tip.simple ? tip.simple : tip.text;
-      speak(`${text}. ${tip.notes[settings.lang]}`, e.currentTarget);
+      speak([text, tip.notes[settings.lang]], e.currentTarget);
     });
     $('#tipSimple').addEventListener('click', () => { setSetting('simple', !settings.simple, true); $('#tipSimple').focus(); });
     $('#tipEn').addEventListener('click', () => { setSetting('showEn', !settings.showEn, true); $('#tipEn').focus(); });

@@ -29,7 +29,7 @@ Based on the first topics of KMUTNB course **020413101 Computer Programming** (C
 
 ## Must-have features
 - One short tip per new idea, with progress shown on the map
-- Read aloud in Thai (Web Speech API) with a speed setting
+- Read aloud in Thai with a speed setting: **pre-made audio** (edge-tts, male voice th-TH-NiwatNeural, one mp3 per sentence in `audio/`), with the browser voice (Web Speech API) as a fallback. Regenerate after any text change (see README)
 - Text size S/M/L/XL, plus normal, high-contrast and dark themes
 - Underlined hard words: tap one to see a pop-up with the simple meaning, the English word, an example and a read-aloud button (from a built-in word list)
 - Hints after each failed run, and the solution after 2 fails

@@ -323,6 +323,44 @@ window.Puzzle = (() => {
     }
   }
 
+  // ---------- Coach messages ----------
+  // Every sentence that can be read aloud is built here, so tools/speech-list.html can list them all
+  // and pre-make an audio file for each one (see speechTexts below).
+  const MSG = {
+    tooLong: 'บิตทำงานนานเกินไป ลองลดจำนวนรอบดูนะ',
+    edge: 'บิตเกือบตกขอบแผนที่!',
+    rock: 'บิตชนหิน 🪨!',
+    noGem: 'ตรงนี้ไม่มีเพชร 💎',
+    notThere: 'คำสั่งหมดแล้ว แต่บิตยังไปไม่ถึงธง 🏁',
+    flagMissing: (got, need) => `ถึงธงแล้ว แต่เก็บเพชรได้ ${got} จาก ${need} เม็ด`,
+    outMissing: (got, need) => `คำสั่งหมดแล้ว เก็บเพชรได้ ${got} จาก ${need} เม็ด และยังไม่ถึงธง 🏁`,
+    map: (n) => `แผนที่ ${n}`,
+    hint: 'คำใบ้',
+    win3: 'สุดยอด! สั้นที่สุดแล้ว ⚡',
+    winSolution: 'ผ่านด้วยเฉลย ลองเขียนเองอีกครั้งเพื่อเก็บดาวเพิ่มนะ',
+    winShorter: (best) => `ผ่านแล้ว! ลองทำให้สั้นลงเหลือ ${best} คำสั่ง เพื่อรับ 3 ดาว`,
+    solution: 'นี่คือเฉลย กด เริ่ม เพื่อดูว่าทำงานอย่างไร',
+    codeError: 'โค้ดยังมีข้อผิดพลาด ดูข้อความสีแดงใต้กล่องโค้ด'
+  };
+  function goalText(def) {
+    const maps = def.maps || [def.map];
+    const needs = maps.map((m) => makeWorld(m).need);
+    if (!needs.some((n) => n > 0)) return 'พาน้องบิตไปที่ธง 🏁';
+    return maps.length > 1 ? 'เก็บเพชร 💎 ให้ครบทุกเม็ด แล้วไปที่ธง 🏁' : `เก็บเพชร 💎 ให้ครบ ${needs[0]} เม็ด แล้วไปที่ธง 🏁`;
+  }
+  // every sentence this level can speak
+  function speechTexts(def) {
+    const maps = def.maps || [def.map];
+    const out = [def.title, def.desc, goalText(def), def.hint, MSG.hint, MSG.tooLong, MSG.edge, MSG.rock, MSG.noGem, MSG.notThere,
+      MSG.win3, MSG.winSolution, MSG.winShorter(def.best), MSG.solution, MSG.codeError];
+    maps.forEach((m, i) => {
+      const need = makeWorld(m).need;
+      for (let got = 0; got < need; got++) out.push(MSG.flagMissing(got, need), MSG.outMissing(got, need));
+      if (maps.length > 1) out.push(MSG.map(i + 1));
+    });
+    return out;
+  }
+
   // ---------- The world (one map) ----------
   const DIRS = { U: [-1, 0], R: [0, 1], D: [1, 0], L: [0, -1] };
   const CW = ['U', 'R', 'D', 'L'];
@@ -352,13 +390,13 @@ window.Puzzle = (() => {
   }
 
   function act(t, w) {
-    if (++w.steps > MAX_STEPS) { w.crash = 'บิตทำงานนานเกินไป ลองลดจำนวนรอบดูนะ'; w.stop = true; return; }
+    if (++w.steps > MAX_STEPS) { w.crash = MSG.tooLong; w.stop = true; return; }
     if (t === 'left') w.face = turn(w.face, -1);
     else if (t === 'right') w.face = turn(w.face, 1);
     else if (t === 'move') {
       const [r, c] = ahead(w);
       if (blocked(w, r, c)) {
-        w.crash = outside(w, r, c) ? 'บิตเกือบตกขอบแผนที่!' : 'บิตชนหิน 🪨!';
+        w.crash = outside(w, r, c) ? MSG.edge : MSG.rock;
         w.stop = true;
         return;
       }
@@ -367,7 +405,7 @@ window.Puzzle = (() => {
       if (atGoal(w) && w.got === w.need) { w.win = true; w.stop = true; } // reaching the flag ends the run
     } else if (t === 'pick') {
       const k = w.pos.join(',');
-      if (!w.gems.has(k)) { w.crash = 'ตรงนี้ไม่มีเพชร 💎'; w.stop = true; return; }
+      if (!w.gems.has(k)) { w.crash = MSG.noGem; w.stop = true; return; }
       w.gems.delete(k);
       w.got++;
     }
@@ -393,9 +431,9 @@ window.Puzzle = (() => {
   function outcome(w) {
     if (w.win) return { ok: true };
     if (w.crash) return { ok: false, msg: w.crash };
-    if (atGoal(w) && w.got < w.need) return { ok: false, msg: `ถึงธงแล้ว แต่เก็บเพชรได้ ${w.got} จาก ${w.need} เม็ด` };
-    if (w.got < w.need) return { ok: false, msg: `คำสั่งหมดแล้ว เก็บเพชรได้ ${w.got} จาก ${w.need} เม็ด และยังไม่ถึงธง 🏁` };
-    return { ok: false, msg: 'คำสั่งหมดแล้ว แต่บิตยังไปไม่ถึงธง 🏁' };
+    if (atGoal(w) && w.got < w.need) return { ok: false, msg: MSG.flagMissing(w.got, w.need) };
+    if (w.got < w.need) return { ok: false, msg: MSG.outMissing(w.got, w.need) };
+    return { ok: false, msg: MSG.notThere };
   }
 
   const mapsOf = (def) => def.maps || [def.map];
@@ -440,7 +478,6 @@ window.Puzzle = (() => {
   function mount(ctx) {
     const { def, esc } = ctx;
     const maps = mapsOf(def);
-    const needs = maps.map((m) => makeWorld(m).need);
     const lang = () => ctx.lang();
     const st = {
       program: def.start ? parseDsl(def.start) : [],
@@ -452,10 +489,8 @@ window.Puzzle = (() => {
       map: 0
     };
 
-    const goalText = needs.some((n) => n > 0)
-      ? (maps.length > 1 ? 'เก็บเพชร 💎 ให้ครบทุกเม็ด แล้วไปที่ธง 🏁' : `เก็บเพชร 💎 ให้ครบ ${needs[0]} เม็ด แล้วไปที่ธง 🏁`)
-      : 'พาน้องบิตไปที่ธง 🏁';
-    const speakIntro = `${def.title}. ${def.desc}. ${goalText}`;
+    const goal = goalText(def);
+    const speakIntro = [def.title, def.desc, goal]; // spoken as separate pieces
 
     ctx.el.innerHTML = `<section class="screen puzzle" id="pzRoot">
       ${ctx.head}
@@ -463,7 +498,7 @@ window.Puzzle = (() => {
       <article class="card reading pz-brief">
         <h2 class="pz-title">${def.start ? '🐞 ' : ''}${esc(def.title)}</h2>
         <p>${esc(def.desc)}</p>
-        <p class="pz-goal">🎯 ${goalText}</p>
+        <p class="pz-goal">🎯 ${goal}</p>
         <div class="card-tools"><button type="button" class="btn small" id="pzRead" aria-pressed="false">🔊 ฟัง</button></div>
       </article>
       ${def.flow ? flowHtml(def.flow, esc) : ''}
@@ -749,7 +784,7 @@ window.Puzzle = (() => {
       if (st.mode === 'type') textArea().value = codeText(st.program, lang());
       showError(null);
       drawEditor();
-      say('นี่คือเฉลย กด ▶ เริ่ม เพื่อดูว่าทำงานอย่างไร (ใช้เฉลยแล้ว ด่านนี้จะได้ 1 ดาว)', 'think', 'นี่คือเฉลย กด เริ่ม เพื่อดูว่าทำงานอย่างไร');
+      say('นี่คือเฉลย กด ▶ เริ่ม เพื่อดูว่าทำงานอย่างไร (ใช้เฉลยแล้ว ด่านนี้จะได้ 1 ดาว)', 'think', [MSG.solution]);
     });
     root.querySelectorAll('[data-map]').forEach((b) => b.addEventListener('click', () => { if (!st.running) showMap(Number(b.dataset.map)); }));
     $('#pzGo').addEventListener('click', () => run(false));
@@ -812,7 +847,7 @@ window.Puzzle = (() => {
         const res = parseCode(textArea().value, lang());
         if (!res.ok) {
           showError(res);
-          say(`โค้ดยังมีข้อผิดพลาด<br>บรรทัด ${res.line}: ${esc(res.msg)}`, 'think', `บรรทัด ${res.line}: ${res.msg}`);
+          say(`โค้ดยังมีข้อผิดพลาด<br>บรรทัด ${res.line}: ${esc(res.msg)}`, 'think', [MSG.codeError]);
           return;
         }
         st.program = res.program;
@@ -864,8 +899,10 @@ window.Puzzle = (() => {
     function failRun(msg, m, line) {
       setBusy(false);
       st.fails++;
-      const where = (maps.length > 1 ? `แผนที่ ${m + 1}: ` : '') + (line ? `(บรรทัด ${line}) ` : '');
-      say(`${where}${esc(msg)}<br>💡 <b>คำใบ้:</b> ${esc(def.hint)}`, 'think', `${where}${msg}. คำใบ้: ${def.hint}`);
+      const where = (maps.length > 1 ? `${MSG.map(m + 1)}: ` : '') + (line ? `(บรรทัด ${line}) ` : '');
+      // spoken without the line number, so every piece has a pre-made audio file
+      const spoken = (maps.length > 1 ? [MSG.map(m + 1)] : []).concat([msg, MSG.hint, def.hint]);
+      say(`${where}${esc(msg)}<br>💡 <b>คำใบ้:</b> ${esc(def.hint)}`, 'think', spoken);
       if (st.fails >= 2) $('#pzSolve').hidden = false;
     }
 
@@ -874,8 +911,8 @@ window.Puzzle = (() => {
       const n = count(st.program);
       const stars = st.usedSolution ? 1 : n <= def.best ? 3 : n <= def.best + 2 ? 2 : 1;
       const next = ctx.finish(stars, { fails: st.fails, usedSolution: st.usedSolution, typed: st.mode === 'type' });
-      const msg = stars === 3 ? 'สุดยอด! สั้นที่สุดแล้ว ⚡' : st.usedSolution ? 'ผ่านด้วยเฉลย ลองเขียนเองอีกครั้งเพื่อเก็บดาวเพิ่มนะ' : `ผ่านแล้ว! ลองทำให้สั้นลงเหลือ ${def.best} คำสั่ง เพื่อรับ 3 ดาว`;
-      say(`<b>${msg}</b>`, 'happy', msg);
+      const msg = stars === 3 ? MSG.win3 : st.usedSolution ? MSG.winSolution : MSG.winShorter(def.best);
+      say(`<b>${msg}</b>`, 'happy', [msg]);
       $('#pzResult').innerHTML = `<div class="pz-win">
         <p class="big-stars" aria-label="ได้ ${stars} จาก 3 ดาว">${ctx.stars(stars)}</p>
         <p>ใช้ ${n} คำสั่ง · ดีที่สุด ${def.best} คำสั่ง</p>
@@ -910,5 +947,5 @@ window.Puzzle = (() => {
     </div>`;
   }
 
-  return { mount, simulate, runAll, parseDsl, parseCode, toCode, codeText, count };
+  return { mount, simulate, runAll, parseDsl, parseCode, toCode, codeText, count, speechTexts };
 })();

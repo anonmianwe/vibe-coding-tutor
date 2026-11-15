@@ -33,7 +33,7 @@ Entry for the KMUTNB ComEdu Open House 2027 Vibe Coding Challenge, Topic 4: ห�
   - Hints, the solution button, read aloud and all accessibility settings are always free.
 - **Help:** a hint after every failed run, and a solution button after 2 fails, so no one gets stuck.
 - **Accessibility:**
-  - 🔊 Read aloud in Thai (Web Speech API)
+  - 🔊 Read aloud in Thai with **pre-made audio** (male voice, works on every device, with a speed setting). The browser's own voice is only a fallback
   - Aa text size S/M/L/XL, and ◐ normal, high-contrast and dark themes
   - An easier-to-read font, and an animations on/off switch
   - No timers
@@ -57,13 +57,30 @@ Comments (`#` in Python, `//` and `/* */` in C) are allowed.
 | `js/content/chapter-1.js` … `chapter-6.js` | One file per chapter: levels, a challenge level and tips. **`chapter-1.js` explains the format.** |
 | `js/puzzle.js` | The game engine: grid, running programs, code in Python and C, the parsers for typed code, the editor |
 | `js/app.js` | Screens and routes (language picker, map, level), settings, read aloud, saving, stars, XP and badges |
+| `audio/` | Pre-made voice files (mp3) and `manifest.js` |
+| `tools/speech-list.html`, `tools/make_audio.py` | List every spoken sentence, and make the missing audio files |
 | `tests/play-test.html` | Automated test: checks every level and challenge, the parsers, step mode and Bit colors, and plays all 24 levels on screen |
+
+## Read aloud (pre-made audio)
+Every sentence the app can read aloud (211 now) has its own mp3 in `audio/`, made with **edge-tts** (Microsoft Edge text-to-speech), male Thai voice **th-TH-NiwatNeural**.
+- `audio/manifest.js` lists the files. Each file is named by a short code made from the sentence's text, so a changed sentence gets a new file.
+- Code words are said in a readable way first (`turn_right()` → "turn right", a lone `;` → "เซมิโคลอน", `{ }` → "วงเล็บปีกกา"); see `spoken()` in `js/app.js`.
+- If a sentence has no file, the browser's Thai voice reads it, if the device has one.
+
+**After you change any text, make the missing files again:**
+```
+python3 -m venv /tmp/ttsenv && /tmp/ttsenv/bin/pip install edge-tts      # once
+python3 -m http.server 8000                                              # in another terminal
+google-chrome --headless=new --virtual-time-budget=10000 --dump-dom http://localhost:8000/tools/speech-list.html > /tmp/speech.html
+/tmp/ttsenv/bin/python tools/make_audio.py /tmp/speech.html
+```
+This sends only our lesson text to Microsoft's online service. The test fails if any sentence is missing its file.
 
 ## Run locally
 ```
 python3 -m http.server 8000
 ```
-Then open http://localhost:8000. Read aloud needs a Thai voice in the browser; Chrome or Edge on Windows, Mac or Android usually have one.
+Then open http://localhost:8000.
 
 ## Test
 With the server running, open http://localhost:8000/tests/play-test.html and read the RESULT line. All checks must pass.

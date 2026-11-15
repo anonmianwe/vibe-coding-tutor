@@ -73,6 +73,21 @@ async function until(fn, ms = 6000) { const t = Date.now(); while (Date.now() - 
   await wait(100);
   ok($('.puzzle'), 'choosing C opens level 1');
   ok($('#tipBox') && $('#tipBox').open && $('#tipBox .code').textContent.includes('move();'), 'level 1 tip is open and shows C code');
+
+  // ---- read aloud: every sentence has a pre-made file, and 🔊 plays it ----
+  const speech = w.SPEECH.all();
+  const missing = speech.filter((x) => !x.has);
+  ok(speech.length > 150 && missing.length === 0, `every spoken sentence has an audio file (${speech.length} sentences, ${missing.length} missing: ${missing.slice(0, 3).map((x) => x.text).join(' | ')})`);
+  const played = [];
+  const RealAudio = w.Audio;
+  w.Audio = function (src) { played.push(src); const a = new RealAudio(src); a.play = () => Promise.resolve(); return a; };
+  $('#tipRead').click();
+  ok(played.length === 1 && /^audio\/[0-9a-f]{8}\.mp3$/.test(played[0]), 'tip 🔊 plays a pre-made file: ' + played[0]);
+  const res = await fetch(new URL(played[0], f.contentWindow.location.href));
+  ok(res.ok && (res.headers.get('content-type') || '').includes('audio'), 'that audio file is served: ' + res.status + ' ' + res.headers.get('content-type'));
+  $('#tipRead').click(); // press again = stop
+  ok($('#tipRead').getAttribute('aria-pressed') === 'false', 'pressing 🔊 again stops it');
+  w.Audio = RealAudio;
   ok(w.CONTENT.CHAPTERS[2].levels[0].tip.notes.c.includes('{ }'), 'sanity: the loop tip note for C contains { }');
 
   // ---- 3. play every level ----

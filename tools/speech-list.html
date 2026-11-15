@@ -1,0 +1,20 @@
+<!doctype html>
+<!-- Lists every sentence the app can read aloud, as JSON: [{ "key", "text", "has" }].
+     tools/make_audio.py reads this list and makes one mp3 per sentence.
+     Run a local server from the repo root, then:
+       google-chrome --headless=new --virtual-time-budget=10000 --dump-dom http://localhost:8000/tools/speech-list.html -->
+<meta charset="utf-8"><title>speech list</title>
+<body><pre id="out">loading…</pre>
+<iframe id="f" style="width:400px;height:300px"></iframe>
+<script>
+const f = document.getElementById('f');
+f.src = '../index.html#/';
+const t0 = Date.now();
+(function check() {
+  const w = f.contentWindow;
+  if (w && w.SPEECH) {
+    document.getElementById('out').textContent = 'SPEECH-JSON' + JSON.stringify(w.SPEECH.all()) + 'END-JSON';
+  } else if (Date.now() - t0 < 15000) setTimeout(check, 100);
+  else document.getElementById('out').textContent = 'TIMEOUT';
+})();
+</script>
